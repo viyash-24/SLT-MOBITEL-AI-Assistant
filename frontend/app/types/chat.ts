@@ -7,6 +7,12 @@ export type ChatMessageData = {
 	time: string;
 	kind?: "fibre" | "roaming";
 	confidence?: string;
+	sources?: ChatSource[];
+};
+
+export type ChatSource = {
+	title: string;
+	category: string;
 };
 
 export type Suggestion = {
