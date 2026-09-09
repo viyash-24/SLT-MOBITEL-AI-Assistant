@@ -23,10 +23,12 @@ kbd { background: #ffffff1f; border-radius: 4px; color: #dce8f6; font-size: 11px
 .recent-heading { align-items: center; color: var(--green); display: flex; font-size: 11px; font-weight: 700; justify-content: space-between; letter-spacing: .1em; margin: 2px 6px 0; text-transform: uppercase; }
 .recent-list { display: flex; flex-direction: column; gap: 3px; }
 .recent-chat, .sidebar-bottom button { background: transparent; border: 0; color: #506276; gap: 9px; padding: 9px 10px; text-align: left; width: 100%; }
+.recent-chat { justify-content: space-between; padding: 3px 4px 3px 10px; }
+.recent-chat-open { background: transparent; border: 0; color: inherit; min-width: 0; overflow: hidden; padding: 6px 0; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+.recent-chat-delete { align-items: center; background: transparent; border: 0; color: var(--muted); display: flex; flex-shrink: 0; justify-content: center; opacity: 0; padding: 6px; }
+.recent-chat:hover .recent-chat-delete, .recent-chat-delete:focus-visible { opacity: 1; }
+.recent-chat-delete:hover { color: #c0392b; }
 .recent-chat:hover, .sidebar-bottom button:hover { background: var(--pale); color: var(--blue); }
-.recent-chat > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.recent-chat i { display: none; margin-left: auto; }
-.recent-chat:hover i { display: flex; }
 .sidebar-bottom { background: #f8fafc; border-top: 1px solid #edf1f6; gap: 3px; margin: 0 -18px -20px; padding: 14px 18px 20px; }
 .sync-status { background: white; border-radius: 7px; color: #28794b; font-size: 11px; gap: 7px; margin-top: 8px; padding: 9px 10px; }
 .sync-status > span, .session-pill i, .topbar-title span i { background: var(--green); border-radius: 50%; display: inline-block; height: 7px; width: 7px; }
@@ -72,6 +74,15 @@ main { min-height: calc(100vh - 74px); }
 .assistant-column { max-width: calc(100% - 45px); }
 .assistant-bubble { background: white; border: 1px solid #edf1f5; border-radius: 4px 17px 17px 17px; box-shadow: 0 5px 20px #15355d08; display: flex; flex-direction: column; gap: 14px; line-height: 1.65; padding: 17px; }
 .assistant-bubble p { margin: 0; }
+.response-content { display: flex; flex-direction: column; gap: 7px; }
+.response-content h3 { color: var(--navy); font-family: 'Plus Jakarta Sans'; font-size: 14px; line-height: 1.4; margin: 5px 0 1px; }
+.response-content p { line-height: 1.7; }
+.response-spacer { height: 3px; }
+.response-list-item { align-items: flex-start; display: flex; gap: 9px; line-height: 1.6; padding-left: 2px; }
+.response-bullet { color: var(--green); font-size: 18px; font-weight: 700; line-height: 1.2; }
+.response-number { color: var(--blue); flex-shrink: 0; font-weight: 700; min-width: 22px; }
+.response-content strong { color: var(--navy); font-weight: 700; }
+.response-content code { font-size: .9em; }
 .plan-grid { display: grid; gap: 8px; grid-template-columns: repeat(3, 1fr); }
 .plan-card, .roaming-details > div { background: #f2f6fb; border: 1px solid transparent; border-radius: 10px; padding: 12px; }
 .plan-card:hover { border-color: #bad0e9; }
