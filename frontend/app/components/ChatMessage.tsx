@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { CheckCheck, ChevronDown, Copy, FileText, Globe2, RefreshCw, Share2, ThumbsDown, ThumbsUp, Verified } from "lucide-react";
-import { useState } from "react";
+import { Fragment, useState, type ReactNode } from "react";
 import type { ChatMessageData } from "../types/chat";
 
 type ChatMessageProps = {
@@ -17,6 +17,39 @@ const plans = [
   ["Popular", "250 GB", "Fibre Family Plus", "125 GB Standard + 125 GB Free Night Quota. Up to 100 Mbps.", "LKR 3,990", "green"],
   ["Standard", "120 GB", "Fibre Web Booster", "60 GB Anytime + 60 GB Night Bonus. High-speed optical line.", "LKR 2,290", "slate"],
 ];
+
+function formatInlineText(text: string): ReactNode[] {
+  return text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g).map((part, index) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={index}>{part.slice(2, -2)}</strong>;
+    }
+    if (part.startsWith("`") && part.endsWith("`")) {
+      return <code key={index}>{part.slice(1, -1)}</code>;
+    }
+    return <Fragment key={index}>{part}</Fragment>;
+  });
+}
+
+function FormattedResponse({ content }: { content: string }) {
+  const lines = content.split(/\r?\n/);
+  return <div className="response-content">
+    {lines.map((line, index) => {
+      const trimmedLine = line.trim();
+      if (!trimmedLine) return <div className="response-spacer" key={`spacer-${index}`} />;
+
+      const heading = trimmedLine.match(/^#{1,3}\s+(.+)$/);
+      if (heading) return <h3 key={index}>{formatInlineText(heading[1])}</h3>;
+
+      const bullet = trimmedLine.match(/^[-*]\s+(.+)$/);
+      if (bullet) return <div className="response-list-item" key={index}><span className="response-bullet">•</span><span>{formatInlineText(bullet[1])}</span></div>;
+
+      const numbered = trimmedLine.match(/^(\d+)[.)]\s+(.+)$/);
+      if (numbered) return <div className="response-list-item" key={index}><span className="response-number">{numbered[1]}.</span><span>{formatInlineText(numbered[2])}</span></div>;
+
+      return <p key={index}>{formatInlineText(trimmedLine)}</p>;
+    })}
+  </div>;
+}
 
 export function ChatMessage({ message, openSource, onToggleSource, onCopy }: ChatMessageProps) {
   const [copyDone, setCopyDone] = useState(false);
@@ -53,7 +86,7 @@ export function ChatMessage({ message, openSource, onToggleSource, onCopy }: Cha
       </div>
       <div className="assistant-column">
         <div className="assistant-bubble">
-          <p>{message.content}</p>
+          <FormattedResponse content={message.content} />
 
           {message.kind === "fibre" && (
             <>
