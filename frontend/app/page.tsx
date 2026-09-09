@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { Menu, Plus, RotateCcw, Settings, SlidersHorizontal, X } from "lucide-react";
+import { Menu, Plus, RotateCcw, Settings, SlidersHorizontal, Trash2, X } from "lucide-react";
 import { ChatInput } from "./components/ChatInput";
 import { ChatWindow } from "./components/ChatWindow";
 import { WelcomeScreen } from "./components/WelcomeScreen";
@@ -21,37 +21,48 @@ export default function Home() {
   const [language, setLanguage] = useState("EN");
   const [messages, setMessages] = useState<ChatMessageData[]>([]);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const sendMessage = async (content: string) => {
     setView("active");
     const userMessage: ChatMessageData = { id: `user-${Date.now()}`, role: "user", content, time: "Now" };
+    const sessionId = activeSessionId ?? `session-${Date.now()}`;
+    if (!activeSessionId) {
+      setActiveSessionId(sessionId);
+    }
     setMessages((current) => [...current, userMessage]);
+    setSessions((current) => {
+      const existing = current.find((session) => session.id === sessionId);
+      if (existing) {
+        return current.map((session) => session.id === sessionId
+          ? { ...session, messages: [...session.messages, userMessage] }
+          : session);
+      }
+      return [{ id: sessionId, title: content, messages: [userMessage] }, ...current];
+    });
     setLoading(true);
     try {
       const response = await sendChatMessage(content, messages);
-      setMessages((current) => [...current, { id: `assistant-${Date.now()}`, role: "assistant", content: response.answer, time: "Now", confidence: response.confidence, sources: response.sources }]);
+      const assistantMessage: ChatMessageData = { id: `assistant-${Date.now()}`, role: "assistant", content: response.answer, time: "Now", confidence: response.confidence, sources: response.sources };
+      setMessages((current) => [...current, assistantMessage]);
+      setSessions((current) => current.map((session) => session.id === sessionId
+        ? { ...session, messages: [...session.messages, assistantMessage] }
+        : session));
     } catch (error) {
-      setMessages((current) => [...current, { id: `error-${Date.now()}`, role: "assistant", content: error instanceof Error ? error.message : "The assistant is temporarily unavailable.", time: "Now" }]);
+      const errorMessage: ChatMessageData = { id: `error-${Date.now()}`, role: "assistant", content: error instanceof Error ? error.message : "The assistant is temporarily unavailable.", time: "Now" };
+      setMessages((current) => [...current, errorMessage]);
+      setSessions((current) => current.map((session) => session.id === sessionId
+        ? { ...session, messages: [...session.messages, errorMessage] }
+        : session));
     } finally {
       setLoading(false);
     }
   };
 
-  const saveCurrentSession = () => {
-    if (messages.length === 0) return;
-    const firstUserMessage = messages.find((message) => message.role === "user");
-    const session: ChatSession = {
-      id: `session-${Date.now()}`,
-      title: firstUserMessage?.content ?? "Chat session",
-      messages,
-    };
-    setSessions((current) => [session, ...current]);
-  };
-
   const startNewChat = () => {
-    saveCurrentSession();
     setMessages([]);
+    setActiveSessionId(null);
     setView("welcome");
     setSidebarOpen(false);
   };
@@ -60,8 +71,18 @@ export default function Home() {
 
   const openSession = (session: ChatSession) => {
     setMessages(session.messages);
+    setActiveSessionId(session.id);
     setView("active");
     setSidebarOpen(false);
+  };
+
+  const deleteSession = (sessionId: string) => {
+    setSessions((current) => current.filter((session) => session.id !== sessionId));
+    if (activeSessionId === sessionId) {
+      setMessages([]);
+      setActiveSessionId(null);
+      setView("welcome");
+    }
   };
 
   return <div className="app-shell">
@@ -72,9 +93,10 @@ export default function Home() {
       </div>
       {sessions.length > 0 && <div className="recent-list">
         <div className="recent-heading"><span>Recent chats</span></div>
-        {sessions.map((session) => <button className="recent-chat" key={session.id} onClick={() => openSession(session)}>
-          <span>{session.title}</span>
-        </button>)}
+        {sessions.map((session) => <div className="recent-chat" key={session.id}>
+          <button className="recent-chat-open" onClick={() => openSession(session)}>{session.title}</button>
+          <button className="recent-chat-delete" onClick={() => deleteSession(session.id)} aria-label={`Delete ${session.title}`} title="Delete chat"><Trash2 size={15} /></button>
+        </div>)}
       </div>}
       <div className="sidebar-bottom">
         <button><Settings size={17} /> Settings</button>
