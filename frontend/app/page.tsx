@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Menu, Plus, RotateCcw, Settings, SlidersHorizontal, Trash2, X } from "lucide-react";
 import { ChatInput } from "./components/ChatInput";
 import { ChatWindow } from "./components/ChatWindow";
@@ -15,6 +15,9 @@ type ChatSession = {
   messages: ChatMessageData[];
 };
 
+const CHAT_STORAGE_KEY = "slt-mobitel-chat-sessions";
+const ACTIVE_SESSION_STORAGE_KEY = "slt-mobitel-active-session";
+
 export default function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [view, setView] = useState<"active" | "welcome">("welcome");
@@ -23,6 +26,46 @@ export default function Home() {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [storageReady, setStorageReady] = useState(false);
+
+  useEffect(() => {
+    const restoreTimer = window.setTimeout(() => {
+      try {
+        const storedSessions = window.localStorage.getItem(CHAT_STORAGE_KEY);
+        const restoredSessions = storedSessions ? JSON.parse(storedSessions) as ChatSession[] : [];
+        const storedActiveSessionId = window.localStorage.getItem(ACTIVE_SESSION_STORAGE_KEY);
+        const restoredActiveSession = Array.isArray(restoredSessions)
+          ? restoredSessions.find((session) => session.id === storedActiveSessionId)
+          : undefined;
+
+        if (Array.isArray(restoredSessions)) {
+          setSessions(restoredSessions);
+        }
+        if (restoredActiveSession) {
+          setActiveSessionId(restoredActiveSession.id);
+          setMessages(restoredActiveSession.messages);
+          setView("active");
+        }
+      } catch {
+        window.localStorage.removeItem(CHAT_STORAGE_KEY);
+        window.localStorage.removeItem(ACTIVE_SESSION_STORAGE_KEY);
+      } finally {
+        setStorageReady(true);
+      }
+    }, 0);
+
+    return () => window.clearTimeout(restoreTimer);
+  }, []);
+
+  useEffect(() => {
+    if (!storageReady) return;
+    window.localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(sessions));
+    if (activeSessionId) {
+      window.localStorage.setItem(ACTIVE_SESSION_STORAGE_KEY, activeSessionId);
+    } else {
+      window.localStorage.removeItem(ACTIVE_SESSION_STORAGE_KEY);
+    }
+  }, [activeSessionId, sessions, storageReady]);
 
   const sendMessage = async (content: string) => {
     setView("active");
@@ -43,7 +86,7 @@ export default function Home() {
     });
     setLoading(true);
     try {
-      const response = await sendChatMessage(content, messages);
+      const response = await sendChatMessage(content, messages, sessionId);
       const assistantMessage: ChatMessageData = { id: `assistant-${Date.now()}`, role: "assistant", content: response.answer, time: "Now", confidence: response.confidence, sources: response.sources };
       setMessages((current) => [...current, assistantMessage]);
       setSessions((current) => current.map((session) => session.id === sessionId
@@ -67,7 +110,11 @@ export default function Home() {
     setSidebarOpen(false);
   };
 
-  const clearChat = () => setMessages([]);
+  const clearChat = () => {
+    setMessages([]);
+    setActiveSessionId(null);
+    setView("welcome");
+  };
 
   const openSession = (session: ChatSession) => {
     setMessages(session.messages);
@@ -89,7 +136,7 @@ export default function Home() {
     <aside className={`sidebar ${sidebarOpen ? "sidebar-open" : ""}`}>
       <div className="sidebar-top">
         <div className="brand"><div className="brand-mark"><Image src="/images/logo.svg" alt="SLT-MOBITEL" width={22} height={22} /></div><div><strong>SLT-MOBITEL</strong><span>AI Customer Support</span></div><button className="mobile-close" onClick={() => setSidebarOpen(false)} aria-label="Close menu"><X size={19} /></button></div>
-        <button className="new-chat" onClick={startNewChat}><Plus size={17} /> New Chat <kbd>⌘N</kbd></button>
+        <button className="new-chat" onClick={startNewChat}><Plus size={17} /> New Chat <kbd></kbd></button>
       </div>
       {sessions.length > 0 && <div className="recent-list">
         <div className="recent-heading"><span>Recent chats</span></div>
@@ -109,7 +156,7 @@ export default function Home() {
         <div className="topbar-actions"><div className="language-switcher">{["EN", "සිං", "த"].map((option) => <button className={language === option ? "selected" : ""} key={option} onClick={() => setLanguage(option)}>{option}</button>)}</div><button className="clear-button" onClick={clearChat}><RotateCcw size={16} /> Clear Chat</button><button className="icon-button"><SlidersHorizontal size={19} /></button></div>
       </header>
       <main>
-        <div className="session-bar"><div className="session-info"><span className="session-pill"><i />Session #SLT-8942-AI</span><span className="context-label">RAG Context: Core Broadband &amp; Roaming Catalog 2024</span></div><div className="view-switcher"><button className={view === "active" ? "selected" : ""} onClick={() => setView("active")}>Live Chat Feed</button><button className={view === "welcome" ? "selected" : ""} onClick={() => setView("welcome")}>Welcome Screen</button></div></div>
+        <div className="session-bar"><div className="session-info"><span className="session-pill"><i />Session #SLT-8942-AI</span><span className="context-label">RAG Context: Core Broadband &amp; Roaming Catalog 2024</span></div><div className="view-switcher"><button className={view === "welcome" ? "selected" : ""} onClick={() => setView("welcome")}>Welcome Screen</button><button className={view === "active" ? "selected" : ""} onClick={() => setView("active")}>Live Chat Feed</button></div></div>
         <div className="content-column">{view === "active" ? <ChatWindow messages={messages} loading={loading} /> : <WelcomeScreen onStart={() => setView("active")} onPrompt={sendMessage} />}<div className="disclaimer">SLT-MOBITEL AI Assistant retrieves answers exclusively from official verified engineering &amp; billing documentation. For critical network emergencies, call <b>1212</b>.</div></div>
       </main>
       <div className="composer-wrap"><ChatInput onSubmit={sendMessage} /></div>
