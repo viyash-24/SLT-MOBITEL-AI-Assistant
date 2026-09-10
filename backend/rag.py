@@ -1,12 +1,13 @@
 from functools import lru_cache
 from pathlib import Path
+from uuid import uuid4
 
 from langchain_core.documents import Document
 from langchain_postgres import PGVector
 
 from chat import generate_answer
 from config import Settings, get_settings
-from database import database_ready
+from database import database_ready, save_chat_exchange
 from embeddings import create_embeddings
 from schemas import ChatRequest, ChatResponse, Source
 
@@ -74,13 +75,17 @@ class RagService:
 
     def chat(self, request: ChatRequest) -> ChatResponse:
         self._require_configuration()
+        session_id = request.session_id or str(uuid4())
         try:
             documents = self._vector_store().similarity_search(request.message, k=4)
         except Exception:
             documents = self._fallback_search(request.message)
         if not documents:
+            answer = "I do not have enough verified information to answer that. Please call 1212 for assistance."
+            save_chat_exchange(self.settings, session_id, request.message, answer, "low", [])
             return ChatResponse(
-                answer="I do not have enough verified information to answer that. Please call 1212 for assistance.",
+                session_id=session_id,
+                answer=answer,
                 sources=[],
                 confidence="low",
             )
@@ -98,7 +103,15 @@ class RagService:
                 source_values.append(source)
         sources = [Source(title=title, category=category) for title, category in source_values]
         confidence = "high" if len(documents) >= 2 else "medium"
-        return ChatResponse(answer=answer, sources=sources, confidence=confidence)
+        save_chat_exchange(
+            self.settings,
+            session_id,
+            request.message,
+            answer,
+            confidence,
+            [source.model_dump() for source in sources],
+        )
+        return ChatResponse(session_id=session_id, answer=answer, sources=sources, confidence=confidence)
 
 
 @lru_cache
