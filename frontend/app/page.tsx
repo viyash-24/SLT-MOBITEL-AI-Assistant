@@ -131,12 +131,12 @@ export default function Home() {
     }
   };
 
-  const startNewChat = () => {
+  const startNewChat = (targetView?: "welcome" | "active") => {
     stopSpeaking();
     cancelListening();
     setMessages([]);
     setActiveSessionId(null);
-    setView("welcome");
+    setView(targetView || "welcome");
     setSidebarOpen(false);
   };
 
@@ -145,7 +145,6 @@ export default function Home() {
     cancelListening();
     setMessages([]);
     setActiveSessionId(null);
-    setView("welcome");
   };
 
   const openSession = (session: ChatSession) => {
@@ -168,7 +167,6 @@ export default function Home() {
     <aside className={`sidebar ${sidebarOpen ? "sidebar-open" : ""}`}>
       <div className="sidebar-top">
         <div className="brand"><div className="brand-mark"><Image src="/images/logo.svg" alt="SLT-MOBITEL" width={96} height={36} priority /></div><button className="mobile-close" onClick={() => setSidebarOpen(false)} aria-label="Close menu"><X size={19} /></button></div>
-        <button className="new-chat" onClick={startNewChat}><Plus size={16} /> New Chat <kbd></kbd></button>
       </div>
       {sessions.length > 0 && <div className="recent-list">
         <div className="recent-heading"><span>Recent chats</span></div>
@@ -178,6 +176,7 @@ export default function Home() {
         </div>)}
       </div>}
       <div className="sidebar-bottom">
+        <button className="new-chat" onClick={() => startNewChat("welcome")}><Plus size={16} /> New Chat</button>
         <button><Settings size={17} /> Settings</button>
       </div>
     </aside>
@@ -198,7 +197,10 @@ export default function Home() {
             transcript={transcript}
             interimTranscript={interimTranscript}
             voiceError={voiceError}
-            onStartListening={startListening}
+            onStartListening={() => {
+              setView("active");
+              startListening();
+            }}
             onStopListening={stopListening}
             onCancelListening={cancelListening}
             onStopSpeaking={stopSpeaking}
@@ -219,6 +221,7 @@ export default function Home() {
             <ChatWindow
               messages={messages}
               loading={loading}
+              isListening={isListening}
               speakingMessageId={speakingMessageId}
               onSpeakMessage={(text, messageId) => speak(text, messageId)}
               onStopSpeaking={stopSpeaking}
@@ -230,17 +233,32 @@ export default function Home() {
         </div>
       </main>
       <div className="composer-wrap">
-        <ChatInput
-          onSubmit={sendMessage}
-          isListening={isListening}
-          onToggleVoice={() => {
-            if (isListening) {
-              stopListening();
-            } else {
-              startListening();
-            }
-          }}
-        />
+        <div className="composer-row">
+          <button
+            type="button"
+            className="bottom-new-chat-btn"
+            onClick={() => startNewChat("active")}
+            title="Start a new chat"
+            aria-label="Start a new chat"
+          >
+            <Plus size={16} />
+            <span>New Chat</span>
+          </button>
+          <div className="composer-input-wrapper">
+            <ChatInput
+              onSubmit={sendMessage}
+              isListening={isListening}
+              onToggleVoice={() => {
+                if (isListening) {
+                  stopListening();
+                } else {
+                  setView("active");
+                  startListening();
+                }
+              }}
+            />
+          </div>
+        </div>
       </div>
     </section>
   </div>;
