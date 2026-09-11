@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { Menu, Plus, RotateCcw, Settings, SlidersHorizontal, Trash2, X } from "lucide-react";
+import { Menu, Moon, Plus, RotateCcw, Settings, Sun, Trash2, X } from "lucide-react";
 import { ChatInput } from "./components/ChatInput";
 import { ChatWindow } from "./components/ChatWindow";
+import { VoiceAgentPage } from "./components/VoiceAgentPage";
 import { VoiceChatButton } from "./components/VoiceChatButton";
 import { WelcomeScreen } from "./components/WelcomeScreen";
 import { useVoiceChat } from "./hooks/useVoiceChat";
@@ -19,29 +20,42 @@ type ChatSession = {
 
 const CHAT_STORAGE_KEY = "slt-mobitel-chat-sessions";
 const ACTIVE_SESSION_STORAGE_KEY = "slt-mobitel-active-session";
+const THEME_STORAGE_KEY = "slt-mobitel-theme";
 
 export default function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [view, setView] = useState<"active" | "welcome">("welcome");
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [view, setView] = useState<"active" | "welcome" | "voice">("welcome");
   const [language, setLanguage] = useState("EN");
   const [messages, setMessages] = useState<ChatMessageData[]>([]);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [storageReady, setStorageReady] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+
+  // Apply dark mode class to document
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [darkMode]);
 
   useEffect(() => {
     const restoreTimer = window.setTimeout(() => {
       try {
         const storedSessions = window.localStorage.getItem(CHAT_STORAGE_KEY);
         const restoredSessions = storedSessions ? JSON.parse(storedSessions) as ChatSession[] : [];
-        const storedActiveSessionId = window.localStorage.getItem(ACTIVE_SESSION_STORAGE_KEY);
-        const restoredActiveSession = Array.isArray(restoredSessions)
-          ? restoredSessions.find((session) => session.id === storedActiveSessionId)
-          : undefined;
 
         if (Array.isArray(restoredSessions)) {
           setSessions(restoredSessions);
+        }
+        // Restore theme preference
+        const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
+        if (savedTheme === "dark") {
+          setDarkMode(true);
         }
         // Always show the welcome screen initially on site load / reload
         setView("welcome");
@@ -67,6 +81,11 @@ export default function Home() {
       window.localStorage.removeItem(ACTIVE_SESSION_STORAGE_KEY);
     }
   }, [activeSessionId, sessions, storageReady]);
+
+  const toggleDarkMode = (enable: boolean) => {
+    setDarkMode(enable);
+    window.localStorage.setItem(THEME_STORAGE_KEY, enable ? "dark" : "light");
+  };
 
   const {
     isSupported,
@@ -131,12 +150,12 @@ export default function Home() {
     }
   };
 
-  const startNewChat = (targetView?: "welcome" | "active") => {
+  const startNewChat = () => {
     stopSpeaking();
     cancelListening();
     setMessages([]);
     setActiveSessionId(null);
-    setView(targetView || "welcome");
+    setView("welcome");
     setSidebarOpen(false);
   };
 
@@ -145,6 +164,7 @@ export default function Home() {
     cancelListening();
     setMessages([]);
     setActiveSessionId(null);
+    setView("welcome");
   };
 
   const openSession = (session: ChatSession) => {
@@ -163,10 +183,82 @@ export default function Home() {
     }
   };
 
+  const openVoiceAgent = () => {
+    stopSpeaking();
+    setView("voice");
+    setSidebarOpen(false);
+  };
+
+  const closeVoiceAgent = () => {
+    cancelListening();
+    stopSpeaking();
+    setView("active");
+  };
+
+  // If voice agent page is open, render it full-workspace
+  if (view === "voice") {
+    return (
+      <div className="app-shell">
+        <aside className={`sidebar ${sidebarOpen ? "sidebar-open" : ""}`}>
+          <div className="sidebar-top">
+            <div className="brand"><div className="brand-mark"><Image src="/images/logo.svg" alt="SLT-MOBITEL" width={86} height={32} priority /></div><button className="mobile-close" onClick={() => setSidebarOpen(false)} aria-label="Close menu"><X size={19} /></button></div>
+            <button className="new-chat" onClick={startNewChat}><Plus size={14} /> New Chat</button>
+          </div>
+          {sessions.length > 0 && <div className="recent-list">
+            <div className="recent-heading"><span>Recent chats</span></div>
+            {sessions.map((session) => <div className="recent-chat" key={session.id}>
+              <button className="recent-chat-open" onClick={() => openSession(session)}>{session.title}</button>
+              <button className="recent-chat-delete" onClick={() => deleteSession(session.id)} aria-label={`Delete ${session.title}`} title="Delete chat"><Trash2 size={15} /></button>
+            </div>)}
+          </div>}
+          <div className="sidebar-bottom">
+            <button onClick={() => setSettingsOpen(!settingsOpen)}><Settings size={17} /> Settings</button>
+            {settingsOpen && (
+              <div className="settings-panel">
+                <div className="settings-label">THEME</div>
+                <div className="theme-toggle">
+                  <button
+                    className={!darkMode ? "theme-btn active" : "theme-btn"}
+                    onClick={() => toggleDarkMode(false)}
+                  >
+                    <Sun size={14} /> Light
+                  </button>
+                  <button
+                    className={darkMode ? "theme-btn active" : "theme-btn"}
+                    onClick={() => toggleDarkMode(true)}
+                  >
+                    <Moon size={14} /> Dark
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </aside>
+        <div className="scrim" onClick={() => setSidebarOpen(false)} />
+        <section className="workspace">
+          <VoiceAgentPage
+            isListening={isListening}
+            isSpeaking={isSpeaking}
+            transcript={transcript}
+            interimTranscript={interimTranscript}
+            voiceError={voiceError}
+            isSupported={isSupported}
+            onStartListening={startListening}
+            onStopListening={stopListening}
+            onCancelListening={cancelListening}
+            onStopSpeaking={stopSpeaking}
+            onBackToChat={closeVoiceAgent}
+          />
+        </section>
+      </div>
+    );
+  }
+
   return <div className="app-shell">
     <aside className={`sidebar ${sidebarOpen ? "sidebar-open" : ""}`}>
       <div className="sidebar-top">
-        <div className="brand"><div className="brand-mark"><Image src="/images/logo.svg" alt="SLT-MOBITEL" width={96} height={36} priority /></div><button className="mobile-close" onClick={() => setSidebarOpen(false)} aria-label="Close menu"><X size={19} /></button></div>
+        <div className="brand"><div className="brand-mark"><Image src="/images/logo.svg" alt="SLT-MOBITEL" width={86} height={32} priority /></div><button className="mobile-close" onClick={() => setSidebarOpen(false)} aria-label="Close menu"><X size={19} /></button></div>
+        <button className="new-chat" onClick={startNewChat}><Plus size={14} /> New Chat</button>
       </div>
       {sessions.length > 0 && <div className="recent-list">
         <div className="recent-heading"><span>Recent chats</span></div>
@@ -176,8 +268,26 @@ export default function Home() {
         </div>)}
       </div>}
       <div className="sidebar-bottom">
-        <button className="new-chat" onClick={() => startNewChat("welcome")}><Plus size={16} /> New Chat</button>
-        <button><Settings size={17} /> Settings</button>
+        <button onClick={() => setSettingsOpen(!settingsOpen)}><Settings size={17} /> Settings</button>
+        {settingsOpen && (
+          <div className="settings-panel">
+            <div className="settings-label">THEME</div>
+            <div className="theme-toggle">
+              <button
+                className={!darkMode ? "theme-btn active" : "theme-btn"}
+                onClick={() => toggleDarkMode(false)}
+              >
+                <Sun size={14} /> Light
+              </button>
+              <button
+                className={darkMode ? "theme-btn active" : "theme-btn"}
+                onClick={() => toggleDarkMode(true)}
+              >
+                <Moon size={14} /> Dark
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </aside>
     <div className="scrim" onClick={() => setSidebarOpen(false)} />
@@ -197,10 +307,7 @@ export default function Home() {
             transcript={transcript}
             interimTranscript={interimTranscript}
             voiceError={voiceError}
-            onStartListening={() => {
-              setView("active");
-              startListening();
-            }}
+            onStartListening={openVoiceAgent}
             onStopListening={stopListening}
             onCancelListening={cancelListening}
             onStopSpeaking={stopSpeaking}
@@ -221,7 +328,6 @@ export default function Home() {
             <ChatWindow
               messages={messages}
               loading={loading}
-              isListening={isListening}
               speakingMessageId={speakingMessageId}
               onSpeakMessage={(text, messageId) => speak(text, messageId)}
               onStopSpeaking={stopSpeaking}
@@ -233,33 +339,19 @@ export default function Home() {
         </div>
       </main>
       <div className="composer-wrap">
-        <div className="composer-row">
-          <button
-            type="button"
-            className="bottom-new-chat-btn"
-            onClick={() => startNewChat("active")}
-            title="Start a new chat"
-            aria-label="Start a new chat"
-          >
-            <Plus size={16} />
-            <span>New Chat</span>
-          </button>
-          <div className="composer-input-wrapper">
-            <ChatInput
-              onSubmit={sendMessage}
-              isListening={isListening}
-              onToggleVoice={() => {
-                if (isListening) {
-                  stopListening();
-                } else {
-                  setView("active");
-                  startListening();
-                }
-              }}
-            />
-          </div>
-        </div>
+        <ChatInput
+          onSubmit={sendMessage}
+          isListening={isListening}
+          onToggleVoice={() => {
+            if (isListening) {
+              stopListening();
+            } else {
+              startListening();
+            }
+          }}
+        />
       </div>
     </section>
   </div>;
 }
+
