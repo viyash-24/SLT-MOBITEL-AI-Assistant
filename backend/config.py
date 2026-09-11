@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     google_api_key: str = ""
     database_url: str = ""
     cors_origins: str = "http://localhost:3000"
-    gemini_model: str = "gemini-3.6-flash"
+    gemini_model: str = "gemini-2.5-flash"
     gemini_embedding_model: str = "models/gemini-embedding-001"
     pgvector_collection: str = "slt_mobitel_knowledge"
 
