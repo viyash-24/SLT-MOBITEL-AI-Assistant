@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { CheckCheck, ChevronDown, Copy, FileText, Globe2, RefreshCw, Share2, ThumbsDown, ThumbsUp, Verified } from "lucide-react";
+import { CheckCheck, ChevronDown, Copy, FileText, Globe2, RefreshCw, Share2, ThumbsDown, ThumbsUp, Verified, Volume2, VolumeX } from "lucide-react";
 import { Fragment, useState, type ReactNode } from "react";
 import type { ChatMessageData } from "../types/chat";
 
@@ -10,6 +10,9 @@ type ChatMessageProps = {
   openSource: boolean;
   onToggleSource: () => void;
   onCopy: (text: string) => void;
+  isSpeaking?: boolean;
+  onSpeak?: (text: string) => void;
+  onStopSpeak?: () => void;
 };
 
 const plans = [
@@ -51,7 +54,15 @@ function FormattedResponse({ content }: { content: string }) {
   </div>;
 }
 
-export function ChatMessage({ message, openSource, onToggleSource, onCopy }: ChatMessageProps) {
+export function ChatMessage({
+  message,
+  openSource,
+  onToggleSource,
+  onCopy,
+  isSpeaking,
+  onSpeak,
+  onStopSpeak,
+}: ChatMessageProps) {
   const [copyDone, setCopyDone] = useState(false);
 
   const handleCopy = () => {
@@ -81,7 +92,7 @@ export function ChatMessage({ message, openSource, onToggleSource, onCopy }: Cha
   return (
     <div className="message-row assistant-message">
       <div className="assistant-avatar">
-        <Image src="/images/logo.svg" alt="SLT-MOBITEL" width={23} height={23} />
+        <Image src="/images/emblem.svg" alt="SLT-MOBITEL" width={26} height={26} />
         <i />
       </div>
       <div className="assistant-column">
@@ -188,9 +199,23 @@ export function ChatMessage({ message, openSource, onToggleSource, onCopy }: Cha
         </div>
 
         <div className="message-actions">
-          <button aria-label="Copy response" onClick={handleCopy}>
+          <button aria-label="Copy response" onClick={handleCopy} title="Copy text">
             <Copy size={15} />
             {copyDone && <span style={{ fontSize: "11px", marginLeft: "4px" }}>Copied!</span>}
+          </button>
+          <button
+            aria-label={isSpeaking ? "Stop reading aloud" : "Read aloud"}
+            title={isSpeaking ? "Stop reading aloud" : "Read aloud"}
+            className={isSpeaking ? "speech-active-btn" : ""}
+            onClick={() => {
+              if (isSpeaking && onStopSpeak) {
+                onStopSpeak();
+              } else if (onSpeak) {
+                onSpeak(message.content);
+              }
+            }}
+          >
+            {isSpeaking ? <VolumeX size={15} /> : <Volume2 size={15} />}
           </button>
           <button aria-label="Helpful response"><ThumbsUp size={15} /></button>
           <button aria-label="Not helpful"><ThumbsDown size={15} /></button>
