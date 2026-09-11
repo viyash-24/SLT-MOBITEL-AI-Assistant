@@ -8,9 +8,18 @@ import type { ChatMessageData } from "../types/chat";
 type ChatWindowProps = {
   messages: ChatMessageData[];
   loading: boolean;
+  speakingMessageId?: string | null;
+  onSpeakMessage?: (text: string, messageId: string) => void;
+  onStopSpeaking?: () => void;
 };
 
-export function ChatWindow({ messages, loading }: ChatWindowProps) {
+export function ChatWindow({
+  messages,
+  loading,
+  speakingMessageId,
+  onSpeakMessage,
+  onStopSpeaking,
+}: ChatWindowProps) {
   const [openSource, setOpenSource] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -29,6 +38,9 @@ export function ChatWindow({ messages, loading }: ChatWindowProps) {
           openSource={openSource === message.id}
           onToggleSource={() => setOpenSource(openSource === message.id ? null : message.id)}
           onCopy={handleCopy}
+          isSpeaking={speakingMessageId === message.id}
+          onSpeak={(text) => onSpeakMessage?.(text, message.id)}
+          onStopSpeak={onStopSpeaking}
         />
       ))}
       {copied && <span className="copy-note">Response copied</span>}
