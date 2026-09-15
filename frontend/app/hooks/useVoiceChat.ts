@@ -76,3 +76,17 @@ type UseVoiceChatProps = {
   language: string;
   onTranscriptComplete?: (transcript: string) => void;
 };
+
+export function useVoiceChat({ language, onTranscriptComplete }: UseVoiceChatProps) {
+  const [isSupported, setIsSupported] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
+  const [transcript, setTranscript] = useState("");
+  const [interimTranscript, setInterimTranscript] = useState("");
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+
+  const recognitionRef = useRef<ISpeechRecognition | null>(null);
+  const transcriptBufferRef = useRef("");
+  const autoSubmitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const onTranscriptCompleteRef = useRef(onTranscriptComplete);
