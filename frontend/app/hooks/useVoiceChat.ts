@@ -110,3 +110,20 @@ export function useVoiceChat({ language, onTranscriptComplete }: UseVoiceChatPro
       recognitionRef.current.lang = LANGUAGE_CODE_MAP[language] ?? "en-US";
     }
   }, [language]);
+
+  const stopSpeaking = useCallback(() => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      setSpeakingMessageId(null);
+    }
+  }, []);
+
+  const speak = useCallback((text: string, messageId?: string) => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+      setVoiceError("Text-to-speech is not supported in this browser.");
+      return;
+    }
+
+    const cleaned = cleanTextForSpeech(text);
+    if (!cleaned) return;
