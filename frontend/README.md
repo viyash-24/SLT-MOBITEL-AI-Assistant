@@ -1,36 +1,134 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SLT-MOBITEL AI Assistant Frontend
 
-## Getting Started
+Next.js frontend for the SLT-MOBITEL AI Assistant. The application provides text chat, voice chat, chat history, source references, language selection, and light/dark themes.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Text chat with the SLT-MOBITEL AI Assistant backend.
+- Voice Agent using the browser Web Speech API.
+- Speech recognition and spoken responses in English, Sinhala, and Tamil when supported.
+- Live voice transcripts with start, stop, send, and cancel controls.
+- Persistent recent chat sessions using browser local storage.
+- Source and confidence information for assistant responses.
+- Responsive desktop and mobile layout.
+- Light and dark theme support.
+
+## Requirements
+
+- Node.js 20 or newer is recommended.
+- npm or another compatible JavaScript package manager.
+- The backend API running locally or at a reachable URL.
+- A modern browser. Voice features require support for `SpeechRecognition` and `speechSynthesis`.
+
+## Installation
+
+From the `frontend` directory, install dependencies:
+
+```powershell
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Create `.env.local` in the `frontend` directory when the backend is not running at the default URL:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The frontend uses `http://localhost:8000` by default, so this file is optional for the standard local setup.
 
-## Learn More
+## Run Locally
 
-To learn more about Next.js, take a look at the following resources:
+Start the backend first from the `backend` directory. Follow [the backend setup guide](../backend/README.md), then run:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```powershell
+uvicorn main:app --reload
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+In a second terminal, start the frontend from the `frontend` directory:
 
-## Deploy on Vercel
+```powershell
+npm run dev
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Open [http://localhost:3000](http://localhost:3000) in a browser.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Available Commands
+
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Start the Next.js development server. |
+| `npm run build` | Create a production build. |
+| `npm start` | Serve the production build. Run `npm run build` first. |
+| `npm run lint` | Run ESLint checks. |
+
+## Voice Agent
+
+The Voice Agent uses browser-native speech APIs and does not upload or store audio recordings.
+
+1. Open the Voice Agent from the application.
+2. Select **Start Conversation** or **Voice Chat**.
+3. Allow microphone access when prompted.
+4. Speak your question.
+5. Stop listening or wait for recognition to finish.
+6. The recognized text is sent to the same `/api/chat` endpoint used by text chat.
+7. The assistant response is displayed and read aloud automatically.
+
+| Language | Browser language code |
+| --- | --- |
+| English | `en-US` |
+| Sinhala | `si-LK` |
+| Tamil | `ta-LK` |
+
+Voice availability depends on the browser, operating system, permissions, microphone, and installed system voices.
+
+## Project Structure
+
+```text
+frontend/
+├── app/
+│   ├── components/       # Chat and voice UI components
+│   ├── hooks/            # Reusable client hooks, including voice chat
+│   ├── services/         # Backend API clients
+│   ├── types/            # Shared frontend TypeScript types
+│   ├── globals.css       # Application styles and responsive states
+│   ├── layout.tsx        # Root layout and metadata
+│   └── page.tsx          # Main application state and views
+├── public/images/        # Public images and branding
+├── eslint.config.mjs     # ESLint configuration
+├── next.config.ts        # Next.js configuration
+├── package.json          # Scripts and dependencies
+└── README.md             # Frontend documentation
+```
+
+## API Integration
+
+The frontend sends chat requests to:
+
+```text
+POST ${NEXT_PUBLIC_API_URL}/api/chat
+```
+
+Each request includes the current message, session ID, and recent conversation history. Voice input uses the same request format as text input; the frontend adds automatic speech playback for responses initiated through voice chat.
+
+## Troubleshooting
+
+### The assistant service cannot be reached
+
+Confirm that the backend is running on port `8000`, or set the correct URL in `.env.local`. Restart the frontend after changing environment variables.
+
+### Voice chat is unavailable
+
+Check that the browser supports speech recognition and synthesis, microphone permission has been granted, a working microphone is connected, and the required Sinhala or Tamil system voice is installed.
+
+### The backend returns a service-unavailable response
+
+Check [http://localhost:8000/api/health](http://localhost:8000/api/health). The backend must have its API key, database, vector extension, and indexed knowledge base configured.
+
+## Production Build
+
+```powershell
+npm run build
+npm start
+```
+
+Set `NEXT_PUBLIC_API_URL` to the deployed backend URL before building the frontend.
