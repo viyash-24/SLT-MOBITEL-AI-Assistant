@@ -184,3 +184,46 @@ export function useVoiceChat({ language, onTranscriptComplete }: UseVoiceChatPro
       }
     }
     setIsListening(false);
+
+    // If we have collected speech, trigger submission
+    const finalResult = transcriptBufferRef.current.trim();
+    if (finalResult && onTranscriptCompleteRef.current) {
+      onTranscriptCompleteRef.current(finalResult);
+      transcriptBufferRef.current = "";
+      setTranscript("");
+      setInterimTranscript("");
+    }
+  }, []);
+
+  const cancelListening = useCallback(() => {
+    if (autoSubmitTimeoutRef.current) {
+      clearTimeout(autoSubmitTimeoutRef.current);
+      autoSubmitTimeoutRef.current = null;
+    }
+
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.abort();
+      } catch {
+        // Ignore if already aborted
+      }
+    }
+    setIsListening(false);
+    transcriptBufferRef.current = "";
+    setTranscript("");
+    setInterimTranscript("");
+  }, []);
+
+  const startListening = useCallback(() => {
+    setVoiceError(null);
+
+    // Stop speaking if currently speaking
+    stopSpeaking();
+
+    if (typeof window === "undefined") return;
+
+    const SpeechRecognitionClass = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognitionClass) {
+      setVoiceError("Voice recognition is not supported in this browser. Please try Chrome, Edge, or Safari.");
+      return;
+    }
