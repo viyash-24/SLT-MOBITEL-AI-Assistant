@@ -189,10 +189,10 @@ code { background: var(--pale, #e1eaf4); border-radius: 4px; color: var(--blue);
 
 /* Voice Agent Page */
 .voice-agent-page { display: flex; flex-direction: column; min-height: 100vh; background: var(--bg); transition: background 0.25s; }
-.vap-header { align-items: center; background: var(--surface); border-bottom: 1px solid var(--line); display: flex; gap: 12px; justify-content: space-between; padding: 16px 28px; }
+.vap-header { align-items: center; background: var(--surface); border-bottom: 1px solid var(--line); display: flex; gap: 12px; justify-content: space-between; padding: 16px 28px; position: relative; }
 .vap-back-btn { align-items: center; background: transparent; border: 1.5px solid var(--line); border-radius: 99px; color: var(--muted); cursor: pointer; display: inline-flex; font-size: 12px; font-weight: 700; gap: 6px; padding: 6px 14px; transition: all 0.18s ease; }
 .vap-back-btn:hover { background: var(--pale); border-color: var(--blue); color: var(--blue); }
-.vap-title { color: var(--navy); font-family: 'Plus Jakarta Sans'; font-size: 17px; font-weight: 800; letter-spacing: -0.02em; margin: 0; }
+.vap-title { color: var(--navy); font-family: 'Plus Jakarta Sans'; font-size: 17px; font-weight: 800; left: 50%; letter-spacing: -0.02em; margin: 0; position: absolute; transform: translateX(-50%); }
 .vap-logo { align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; display: flex; height: 40px; justify-content: center; min-width: 115px; padding: 4px 10px; }
 .vap-logo img { height: 30px; max-width: 105px; object-fit: contain; width: auto; }
 .vap-body { align-items: center; display: flex; flex: 1; flex-direction: column; gap: 22px; justify-content: center; padding: 40px 24px 60px; }
