@@ -17,3 +17,18 @@ type VoiceAgentPageProps = {
   onStopSpeaking: () => void;
   onBackToChat: () => void;
 };
+
+export function VoiceAgentPage({
+  isListening,
+  isSpeaking,
+  transcript,
+  interimTranscript,
+  voiceError,
+  isSupported = true,
+  onStartListening,
+  onStopListening,
+  onCancelListening,
+  onStopSpeaking,
+  onBackToChat,
+}: VoiceAgentPageProps) {
+  const currentText = transcript || interimTranscript;
