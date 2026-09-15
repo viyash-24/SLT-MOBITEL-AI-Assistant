@@ -127,3 +127,60 @@ export function useVoiceChat({ language, onTranscriptComplete }: UseVoiceChatPro
 
     const cleaned = cleanTextForSpeech(text);
     if (!cleaned) return;
+
+    // Cancel any previous speech
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(cleaned);
+    const targetLang = LANGUAGE_CODE_MAP[language] ?? "en-US";
+    utterance.lang = targetLang;
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+
+    // Pick best matching voice if available
+    const voices = window.speechSynthesis.getVoices();
+    const langPrefix = targetLang.split("-")[0];
+    const matchingVoice = voices.find((v) => v.lang === targetLang) ||
+      voices.find((v) => v.lang.startsWith(langPrefix));
+
+    if (matchingVoice) {
+      utterance.voice = matchingVoice;
+    }
+
+    utterance.onstart = () => {
+      setIsSpeaking(true);
+      if (messageId) {
+        setSpeakingMessageId(messageId);
+      }
+    };
+
+    utterance.onend = () => {
+      setIsSpeaking(false);
+      setSpeakingMessageId(null);
+    };
+
+    utterance.onerror = (e) => {
+      if (e.error !== "canceled" && e.error !== "interrupted") {
+        setVoiceError("Audio playback encountered an issue.");
+      }
+      setIsSpeaking(false);
+      setSpeakingMessageId(null);
+    };
+
+    window.speechSynthesis.speak(utterance);
+  }, [language]);
+
+  const stopListening = useCallback(() => {
+    if (autoSubmitTimeoutRef.current) {
+      clearTimeout(autoSubmitTimeoutRef.current);
+      autoSubmitTimeoutRef.current = null;
+    }
+
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch {
+        // Ignore if already stopped
+      }
+    }
+    setIsListening(false);
