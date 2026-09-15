@@ -227,3 +227,102 @@ export function useVoiceChat({ language, onTranscriptComplete }: UseVoiceChatPro
       setVoiceError("Voice recognition is not supported in this browser. Please try Chrome, Edge, or Safari.");
       return;
     }
+
+    // Abort existing instance if any
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.abort();
+      } catch {
+        // Ignore
+      }
+    }
+
+    try {
+      const recognition = new SpeechRecognitionClass();
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.lang = LANGUAGE_CODE_MAP[language] ?? "en-US";
+
+      transcriptBufferRef.current = "";
+      setTranscript("");
+      setInterimTranscript("");
+
+      recognition.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognition.onresult = (event: ISpeechRecognitionEvent) => {
+        let currentInterim = "";
+        let currentFinal = "";
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const result = event.results[i];
+          const transcriptPiece = result[0]?.transcript ?? "";
+          if (result.isFinal) {
+            currentFinal += transcriptPiece;
+          } else {
+            currentInterim += transcriptPiece;
+          }
+        }
+
+        if (currentFinal) {
+          transcriptBufferRef.current = (transcriptBufferRef.current + " " + currentFinal).trim();
+          setTranscript(transcriptBufferRef.current);
+          setInterimTranscript("");
+        } else {
+          setInterimTranscript(currentInterim);
+        }
+      };
+
+      recognition.onerror = (event: ISpeechRecognitionErrorEvent) => {
+        if (event.error === "no-speech") {
+          setVoiceError("No speech was detected. Please try speaking again.");
+        } else if (event.error === "not-allowed") {
+          setVoiceError("Microphone access was denied. Please allow microphone permissions in your browser.");
+        } else if (event.error === "audio-capture") {
+          setVoiceError("No microphone was found on your device.");
+        } else if (event.error !== "aborted") {
+          setVoiceError(`Voice input error: ${event.error}`);
+        }
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+        const finalResult = transcriptBufferRef.current.trim();
+        if (finalResult && onTranscriptCompleteRef.current) {
+          onTranscriptCompleteRef.current(finalResult);
+          transcriptBufferRef.current = "";
+          setTranscript("");
+          setInterimTranscript("");
+        }
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch (err) {
+      setVoiceError(err instanceof Error ? err.message : "Failed to start speech recognition.");
+      setIsListening(false);
+    }
+  }, [language, stopSpeaking]);
+
+  const clearVoiceError = useCallback(() => {
+    setVoiceError(null);
+  }, []);
+
+  return {
+    isSupported,
+    isListening,
+    isSpeaking,
+    speakingMessageId,
+    transcript,
+    interimTranscript,
+    voiceError,
+    startListening,
+    stopListening,
+    cancelListening,
+    speak,
+    stopSpeaking,
+    clearVoiceError,
+  };
+}
