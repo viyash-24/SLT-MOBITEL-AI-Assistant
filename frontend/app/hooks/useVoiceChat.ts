@@ -90,3 +90,23 @@ export function useVoiceChat({ language, onTranscriptComplete }: UseVoiceChatPro
   const transcriptBufferRef = useRef("");
   const autoSubmitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const onTranscriptCompleteRef = useRef(onTranscriptComplete);
+
+  useEffect(() => {
+    onTranscriptCompleteRef.current = onTranscriptComplete;
+  }, [onTranscriptComplete]);
+
+  // Check browser support for Web Speech API
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const hasRecognition = Boolean(window.SpeechRecognition || window.webkitSpeechRecognition);
+      const hasSynthesis = "speechSynthesis" in window;
+      setIsSupported(hasRecognition && hasSynthesis);
+    }
+  }, []);
+
+  // Update language of active recognition if changed
+  useEffect(() => {
+    if (recognitionRef.current) {
+      recognitionRef.current.lang = LANGUAGE_CODE_MAP[language] ?? "en-US";
+    }
+  }, [language]);
