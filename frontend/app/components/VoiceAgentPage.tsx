@@ -108,3 +108,19 @@ export function VoiceAgentPage({
             <span>{voiceError}</span>
           </div>
         )}
+
+        <button
+          type="button"
+          className={`vap-cta-btn ${isListening ? "vap-cta-listening" : ""} ${isSpeaking ? "vap-cta-speaking" : ""}`}
+          onClick={handleMainButton}
+          disabled={!isSupported}
+          aria-label={getButtonLabel()}
+        >
+          {isListening ? (
+            <><MicOff size={18} /><span>Stop Listening</span></>
+          ) : isSpeaking ? (
+            <><Square size={16} /><span>Stop Speaking</span></>
+          ) : (
+            <><Mic size={18} /><span>Start Conversation</span></>
+          )}
+        </button>
