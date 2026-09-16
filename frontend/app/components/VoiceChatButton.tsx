@@ -31,3 +31,13 @@ export function VoiceChatButton({
   isSupported = true,
 }: VoiceChatButtonProps) {
   const currentText = transcript || interimTranscript;
+
+  const handleClick = () => {
+    if (isListening) {
+      onStopListening();
+    } else if (isSpeaking) {
+      onStopSpeaking();
+    } else {
+      onStartListening();
+    }
+  };
