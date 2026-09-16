@@ -124,3 +124,14 @@ export function VoiceAgentPage({
             <><Mic size={18} /><span>Start Conversation</span></>
           )}
         </button>
+
+        {isListening && (
+          <button
+            type="button"
+            className="vap-cancel-btn"
+            onClick={onCancelListening}
+          >
+            Cancel
+          </button>
+        )}
+      </div>
