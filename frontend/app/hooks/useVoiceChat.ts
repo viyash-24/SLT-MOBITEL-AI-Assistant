@@ -88,6 +88,7 @@ export function useVoiceChat({ language, onTranscriptComplete }: UseVoiceChatPro
 
   const recognitionRef = useRef<ISpeechRecognition | null>(null);
   const transcriptBufferRef = useRef("");
+  const recognitionFallbackAttemptedRef = useRef(false);
   const autoSubmitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const onTranscriptCompleteRef = useRef(onTranscriptComplete);
 
@@ -100,7 +101,11 @@ export function useVoiceChat({ language, onTranscriptComplete }: UseVoiceChatPro
     if (typeof window !== "undefined") {
       const hasRecognition = Boolean(window.SpeechRecognition || window.webkitSpeechRecognition);
       const hasSynthesis = "speechSynthesis" in window;
-      setIsSupported(hasRecognition && hasSynthesis);
+      const supportCheck = window.setTimeout(() => {
+        setIsSupported(hasRecognition && hasSynthesis);
+      }, 0);
+
+      return () => window.clearTimeout(supportCheck);
     }
   }, []);
 
@@ -239,9 +244,11 @@ export function useVoiceChat({ language, onTranscriptComplete }: UseVoiceChatPro
 
     try {
       const recognition = new SpeechRecognitionClass();
+      const targetLanguage = LANGUAGE_CODE_MAP[language] ?? "en-US";
       recognition.continuous = false;
       recognition.interimResults = true;
-      recognition.lang = LANGUAGE_CODE_MAP[language] ?? "en-US";
+      recognition.lang = targetLanguage;
+      recognitionFallbackAttemptedRef.current = false;
 
       transcriptBufferRef.current = "";
       setTranscript("");
@@ -281,6 +288,22 @@ export function useVoiceChat({ language, onTranscriptComplete }: UseVoiceChatPro
           setVoiceError("Microphone access was denied. Please allow microphone permissions in your browser.");
         } else if (event.error === "audio-capture") {
           setVoiceError("No microphone was found on your device.");
+        } else if (event.error === "network") {
+          if (targetLanguage !== "en-US" && !recognitionFallbackAttemptedRef.current) {
+            recognitionFallbackAttemptedRef.current = true;
+            recognition.lang = "en-US";
+            setVoiceError("This browser could not connect to the selected language service. Retrying voice recognition in English...");
+            window.setTimeout(() => {
+              try {
+                recognition.start();
+              } catch {
+                setVoiceError("Speech recognition could not connect. Try Chrome or Edge over HTTPS, then check your internet connection.");
+                setIsListening(false);
+              }
+            }, 0);
+          } else {
+            setVoiceError("Speech recognition could not connect. Try Chrome or Edge over HTTPS, then check your internet connection.");
+          }
         } else if (event.error !== "aborted") {
           setVoiceError(`Voice input error: ${event.error}`);
         }
@@ -289,7 +312,7 @@ export function useVoiceChat({ language, onTranscriptComplete }: UseVoiceChatPro
 
       recognition.onend = () => {
         setIsListening(false);
-        const finalResult = transcriptBufferRef.current.trim();
+        const finalResult = transcriptBufferRef.current.trim();     
         if (finalResult && onTranscriptCompleteRef.current) {
           onTranscriptCompleteRef.current(finalResult);
           transcriptBufferRef.current = "";
