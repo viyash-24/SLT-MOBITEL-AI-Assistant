@@ -135,3 +135,10 @@ export function VoiceAgentPage({
           </button>
         )}
       </div>
+
+      <div className="vap-footer">
+        <span>SLT-MOBITEL AI Assistant</span>
+      </div>
+    </div>
+  );
+}
