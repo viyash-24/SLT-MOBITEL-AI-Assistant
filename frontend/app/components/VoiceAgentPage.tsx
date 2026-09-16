@@ -56,3 +56,55 @@ export function VoiceAgentPage({
     if (isSpeaking) return "Stop Speaking";
     return "Start Conversation";
   };
+
+  return (
+    <div className="voice-agent-page">
+      <div className="vap-header">
+        <button
+          type="button"
+          className="vap-back-btn"
+          onClick={onBackToChat}
+          aria-label="Back to Chat"
+        >
+          <ArrowLeft size={16} />
+          
+        </button>
+
+        <h2 className="vap-title text-center">Voice Agent</h2>
+
+        
+      </div>
+
+      <div className="vap-body">
+        <div
+          className={`vap-mic-orb ${isListening ? "vap-orb-listening" : ""} ${isSpeaking ? "vap-orb-speaking" : ""}`}
+          role="img"
+          aria-label={getStatus()}
+        >
+          {isListening ? (
+            <span className="vap-orb-waves">
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+            </span>
+          ) : isSpeaking ? (
+            <Volume2 size={38} />
+          ) : (
+            <Mic size={38} />
+          )}
+        </div>
+
+        {(isListening || isSpeaking) && currentText && (
+          <div className="vap-transcript-box">
+            <p>{currentText}</p>
+          </div>
+        )}
+
+        <p className="vap-status">{getStatus()}</p>
+
+        {voiceError && (
+          <div className="vap-error">
+            <span>{voiceError}</span>
+          </div>
+        )}
