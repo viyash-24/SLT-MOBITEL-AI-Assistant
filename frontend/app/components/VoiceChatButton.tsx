@@ -16,3 +16,18 @@ type VoiceChatButtonProps = {
   onClearError?: () => void;
   isSupported?: boolean;
 };
+
+export function VoiceChatButton({
+  isListening,
+  isSpeaking,
+  transcript = "",
+  interimTranscript = "",
+  voiceError,
+  onStartListening,
+  onStopListening,
+  onCancelListening,
+  onStopSpeaking,
+  onClearError,
+  isSupported = true,
+}: VoiceChatButtonProps) {
+  const currentText = transcript || interimTranscript;
