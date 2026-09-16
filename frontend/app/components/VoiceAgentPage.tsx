@@ -32,3 +32,13 @@ export function VoiceAgentPage({
   onBackToChat,
 }: VoiceAgentPageProps) {
   const currentText = transcript || interimTranscript;
+
+  const handleMainButton = () => {
+    if (isListening) {
+      onStopListening();
+    } else if (isSpeaking) {
+      onStopSpeaking();
+    } else {
+      onStartListening();
+    }
+  };
