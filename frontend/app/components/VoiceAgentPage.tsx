@@ -42,3 +42,11 @@ export function VoiceAgentPage({
       onStartListening();
     }
   };
+
+  const getStatus = () => {
+    if (!isSupported) return "Voice not supported in this browser";
+    if (voiceError) return voiceError;
+    if (isListening) return "Listening... Speak now";
+    if (isSpeaking) return "Assistant is responding...";
+    return "Ready to connect";
+  };
