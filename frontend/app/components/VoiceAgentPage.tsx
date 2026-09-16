@@ -50,3 +50,9 @@ export function VoiceAgentPage({
     if (isSpeaking) return "Assistant is responding...";
     return "Ready to connect";
   };
+
+  const getButtonLabel = () => {
+    if (isListening) return "Stop Listening";
+    if (isSpeaking) return "Stop Speaking";
+    return "Start Conversation";
+  };
