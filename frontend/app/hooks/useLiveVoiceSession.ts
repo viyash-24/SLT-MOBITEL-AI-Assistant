@@ -84,3 +84,38 @@ export function useLiveVoiceSession({
       nextPlayTimeRef.current = outputAudioCtxRef.current.currentTime;
     }
   }, []);
+
+  // ── Full cleanup (audio + mic + WS) ───────────────────────────────────────
+  const cleanup = useCallback(() => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+
+    stopAudioPlayback();
+
+    if (processorRef.current) {
+      try {
+        processorRef.current.disconnect();
+      } catch {}
+      processorRef.current = null;
+    }
+
+    if (micStreamRef.current) {
+      for (const t of micStreamRef.current.getTracks()) t.stop();
+      micStreamRef.current = null;
+    }
+
+    if (inputAudioCtxRef.current) {
+      try {
+        inputAudioCtxRef.current.close();
+      } catch {}
+      inputAudioCtxRef.current = null;
+    }
+
+    if (outputAudioCtxRef.current) {
+      try {
+        outputAudioCtxRef.current.close();
+      } catch {}
+      outputAudioCtxRef.current = null;
+    }
