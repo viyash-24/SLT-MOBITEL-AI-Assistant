@@ -1,9 +1,10 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 
 from config import get_settings
 from rag import KNOWLEDGE_BASE, get_rag_service
 from schemas import ChatRequest, ChatResponse, HealthResponse
+from voice_live import handle_voice_live_websocket
 
 settings = get_settings()
 app = FastAPI(title="SLT-MOBITEL AI Assistant API", version="1.0.0")
@@ -48,3 +49,8 @@ def reindex() -> dict[str, int | str]:
         raise HTTPException(status_code=503, detail=str(error)) from error
     except Exception as error:
         raise HTTPException(status_code=502, detail="Knowledge base indexing failed") from error
+
+
+@app.websocket("/api/voice/live")
+async def voice_live(websocket: WebSocket) -> None:
+    await handle_voice_live_websocket(websocket)
