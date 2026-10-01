@@ -29,3 +29,27 @@ export function useLiveVoiceSession({
   const [assistantTranscript, setAssistantTranscript] = useState<string>("");
   const [sources, setSources] = useState<LiveVoiceSource[]>([]);
   const [audioLevel, setAudioLevel] = useState<number>(0);
+
+  // ── Refs ──────────────────────────────────────────────────────────────────
+  const wsRef = useRef<WebSocket | null>(null);
+  const micStreamRef = useRef<MediaStream | null>(null);
+  const inputAudioCtxRef = useRef<AudioContext | null>(null);
+  const outputAudioCtxRef = useRef<AudioContext | null>(null);
+  const inputAnalyserRef = useRef<AnalyserNode | null>(null);
+  const outputAnalyserRef = useRef<AnalyserNode | null>(null);
+  const processorRef = useRef<ScriptProcessorNode | null>(null);
+  const isMutedRef = useRef(false);
+  const nextPlayTimeRef = useRef<number>(0);
+  const activeSourcesRef = useRef<AudioBufferSourceNode[]>([]);
+  const animationFrameRef = useRef<number | null>(null);
+
+  // stateRef mirrors state to avoid stale-closure bugs in async callbacks
+  const stateRef = useRef<AvatarState>("idle");
+
+  // intentionalCloseRef: true when user explicitly clicks "End Conversation"
+  // prevents auto-reconnect on user-initiated close
+  const intentionalCloseRef = useRef(false);
+
+  // startSessionRef: always points to the latest startSession so ws.onclose
+  // can call it without capturing a stale closure
+  const startSessionRef = useRef<(() => void) | null>(null);
