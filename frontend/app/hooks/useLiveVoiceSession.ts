@@ -53,3 +53,12 @@ export function useLiveVoiceSession({
   // startSessionRef: always points to the latest startSession so ws.onclose
   // can call it without capturing a stale closure
   const startSessionRef = useRef<(() => void) | null>(null);
+
+  // Keep stateRef in sync
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
+  useEffect(() => {
+    isMutedRef.current = isMuted;
+  }, [isMuted]);
