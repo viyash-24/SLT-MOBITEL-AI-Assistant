@@ -62,3 +62,25 @@ export function useLiveVoiceSession({
   useEffect(() => {
     isMutedRef.current = isMuted;
   }, [isMuted]);
+
+  // Atomic state setter that keeps stateRef in sync immediately (no render lag)
+  const setStateSynced = useCallback((s: AvatarState) => {
+    stateRef.current = s;
+    setState(s);
+  }, []);
+
+  // ── Audio: stop playback ──────────────────────────────────────────────────
+  const stopAudioPlayback = useCallback(() => {
+    for (const src of activeSourcesRef.current) {
+      try {
+        src.stop();
+        src.disconnect();
+      } catch {
+        /* already stopped */
+      }
+    }
+    activeSourcesRef.current = [];
+    if (outputAudioCtxRef.current) {
+      nextPlayTimeRef.current = outputAudioCtxRef.current.currentTime;
+    }
+  }, []);
