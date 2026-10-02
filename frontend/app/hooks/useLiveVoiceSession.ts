@@ -278,3 +278,23 @@ export function useLiveVoiceSession({
           "Unable to access microphone. Please check your audio settings."
         );
       }
+
+      // 2. Input AudioContext at 16kHz
+      //    Buffer size 512 → 32ms chunks (much lower latency than 2048=128ms)
+      const AC =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext })
+          .webkitAudioContext;
+      const inputCtx = new AC({ sampleRate: 16000 });
+      inputAudioCtxRef.current = inputCtx;
+
+      const srcNode = inputCtx.createMediaStreamSource(stream);
+      const analyser = inputCtx.createAnalyser();
+      analyser.fftSize = 256;
+      inputAnalyserRef.current = analyser;
+      srcNode.connect(analyser);
+
+      const processor = inputCtx.createScriptProcessor(1024, 1, 1);
+      processorRef.current = processor;
+
+      
