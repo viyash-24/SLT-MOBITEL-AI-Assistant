@@ -149,7 +149,7 @@ export default function LiveAvatarVoicePage() {
 
             <div className="avatar-image-container">
               <Image
-                src="/images/avatar_alt.jpg"
+                src="/images/avatar.jpg"
                 alt="Alt - SLT-MOBITEL AI Virtual Assistant"
                 width={320}
                 height={320}
@@ -174,7 +174,7 @@ export default function LiveAvatarVoicePage() {
 
           {/* Representative Identity & Title */}
           <div className="avatar-identity">
-            <h2>Alt</h2>
+            <h2>voice agent</h2>
             <p>SLT-MOBITEL AI Customer Care Assistant</p>
           </div>
 
