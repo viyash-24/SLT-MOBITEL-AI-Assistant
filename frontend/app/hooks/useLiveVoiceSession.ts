@@ -14,18 +14,15 @@ export type LiveVoiceSource = { title: string; category: string };
 
 export type UseLiveVoiceSessionOptions = {
   language?: string;
-  onInterrupted?: () => void;
 };
 
 export function useLiveVoiceSession({
   language = "EN",
-  onInterrupted,
 }: UseLiveVoiceSessionOptions = {}) {
   const [state, setState] = useState<AvatarState>("idle");
   const [statusMessage, setStatusMessage] = useState<string>("Ready to connect");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(false);
-  const [userTranscript, setUserTranscript] = useState<string>("");
   const [assistantTranscript, setAssistantTranscript] = useState<string>("");
   const [sources, setSources] = useState<LiveVoiceSource[]>([]);
   const [audioLevel, setAudioLevel] = useState<number>(0);
@@ -119,3 +116,119 @@ export function useLiveVoiceSession({
       } catch {}
       outputAudioCtxRef.current = null;
     }
+
+    // Null analysers — they belong to the closed contexts above.
+    // Reusing them in a new context causes InvalidAccessError.
+    inputAnalyserRef.current = null;
+    outputAnalyserRef.current = null;
+
+    if (wsRef.current) {
+      try {
+        wsRef.current.close();
+      } catch {}
+      wsRef.current = null;
+    }
+
+    setAudioLevel(0);
+  }, [stopAudioPlayback]);
+
+  // ── Audio energy loop for waveform visualizer ─────────────────────────────
+  const updateAudioEnergy = useCallback(() => {
+    const loop = () => {
+      let level = 0;
+      if (activeSourcesRef.current.length > 0 && outputAnalyserRef.current) {
+        const d = new Uint8Array(outputAnalyserRef.current.frequencyBinCount);
+        outputAnalyserRef.current.getByteFrequencyData(d);
+        let sum = 0;
+        for (let i = 0; i < d.length; i++) sum += d[i];
+        level = Math.min(1, (sum / d.length) / 100);
+      } else if (inputAnalyserRef.current && !isMutedRef.current) {
+        const d = new Uint8Array(inputAnalyserRef.current.frequencyBinCount);
+        inputAnalyserRef.current.getByteFrequencyData(d);
+        let sum = 0;
+        for (let i = 0; i < d.length; i++) sum += d[i];
+        level = Math.min(1, (sum / d.length) / 100);
+      }
+      setAudioLevel(level);
+      animationFrameRef.current = requestAnimationFrame(loop);
+    };
+    if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+    animationFrameRef.current = requestAnimationFrame(loop);
+  }, []);
+
+  // ── Play a base64-encoded 24kHz PCM chunk from the assistant ─────────────
+  const playPcmChunk = useCallback(
+    (base64Data: string) => {
+      try {
+        // Create / resume output AudioContext
+        if (!outputAudioCtxRef.current) {
+          const AC =
+            window.AudioContext ||
+            (window as unknown as { webkitAudioContext: typeof AudioContext })
+              .webkitAudioContext;
+          outputAudioCtxRef.current = new AC({ sampleRate: 24000 });
+        }
+        const ctx = outputAudioCtxRef.current;
+        if (ctx.state === "suspended") ctx.resume();
+
+        // Re-create analyser if context changed (cross-context guard)
+        if (
+          !outputAnalyserRef.current ||
+          outputAnalyserRef.current.context !== ctx
+        ) {
+          outputAnalyserRef.current = ctx.createAnalyser();
+          outputAnalyserRef.current.fftSize = 256;
+          outputAnalyserRef.current.connect(ctx.destination);
+        }
+
+        // Decode base64 → Int16 PCM → Float32
+        const binary = window.atob(base64Data);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+
+        const numSamples = Math.floor(bytes.length / 2);
+        if (numSamples === 0) return;
+
+        const f32 = new Float32Array(numSamples);
+        const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+        for (let i = 0; i < numSamples; i++) {
+          const s = view.getInt16(i * 2, true);
+          f32[i] = s < 0 ? s / 32768 : s / 32767;
+        }
+
+        const buf = ctx.createBuffer(1, numSamples, 24000);
+        buf.getChannelData(0).set(f32);
+
+        const source = ctx.createBufferSource();
+        source.buffer = buf;
+        source.connect(outputAnalyserRef.current);
+
+        const now = ctx.currentTime;
+        const startAt = Math.max(now, nextPlayTimeRef.current);
+        source.start(startAt);
+        nextPlayTimeRef.current = startAt + buf.duration;
+
+        activeSourcesRef.current.push(source);
+        source.onended = () => {
+          activeSourcesRef.current = activeSourcesRef.current.filter(
+            (s) => s !== source
+          );
+          // When all audio drains → return to listening
+          if (
+            activeSourcesRef.current.length === 0 &&
+            stateRef.current === "speaking"
+          ) {
+            stateRef.current = "listening";
+            setState("listening");
+            setStatusMessage("Listening... Speak naturally");
+          }
+        };
+
+        setStateSynced("speaking");
+        setStatusMessage("Alt is speaking...");
+      } catch (err) {
+        console.error("playPcmChunk error:", err);
+      }
+    },
+    [setStateSynced]
+  );
