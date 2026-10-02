@@ -232,3 +232,20 @@ export function useLiveVoiceSession({
     },
     [setStateSynced]
   );
+
+  // ── Start a live voice session ────────────────────────────────────────────
+  const startSession = useCallback(async () => {
+    // Reset intentional-close flag on every new session start
+    intentionalCloseRef.current = false;
+
+    cleanup();
+    setErrorMessage(null);
+    setStateSynced("connecting");
+    setStatusMessage("Connecting to SLT-MOBITEL Live Assistant...");
+    setAssistantTranscript("");
+    setSources([]);
+
+    try {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error("Microphone access is not supported in this browser.");
+      }
