@@ -249,3 +249,32 @@ export function useLiveVoiceSession({
       if (!navigator.mediaDevices?.getUserMedia) {
         throw new Error("Microphone access is not supported in this browser.");
       }
+
+      // 1. Request microphone (audio-only, voice-optimised)
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            channelCount: 1,
+            sampleRate: 16000,
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
+          video: false,
+        });
+        micStreamRef.current = stream;
+      } catch (micErr: unknown) {
+        const e = micErr as { name?: string };
+        if (e.name === "NotAllowedError" || e.name === "PermissionDeniedError") {
+          throw new Error(
+            "Microphone permission denied. Please allow microphone access in browser settings."
+          );
+        }
+        if (e.name === "NotFoundError" || e.name === "DevicesNotFoundError") {
+          throw new Error("No microphone found on your device.");
+        }
+        throw new Error(
+          "Unable to access microphone. Please check your audio settings."
+        );
+      }
