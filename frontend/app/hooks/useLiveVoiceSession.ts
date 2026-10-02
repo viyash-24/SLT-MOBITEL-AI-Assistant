@@ -297,4 +297,19 @@ export function useLiveVoiceSession({
       const processor = inputCtx.createScriptProcessor(1024, 1, 1);
       processorRef.current = processor;
 
-      
+      // 3. WebSocket to FastAPI backend with actual mic sampleRate
+      const apiBase =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const proto = apiBase.startsWith("https") ? "wss:" : "ws:";
+      const host = apiBase.replace(/^https?:\/\//, "");
+      const sid = `live-${Date.now()}`;
+      const actualSampleRate = inputCtx.sampleRate || 16000;
+      const wsUrl = `${proto}//${host}/api/voice/live?session_id=${sid}&language=${encodeURIComponent(language)}&sample_rate=${actualSampleRate}`;
+
+      const ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
+      ws.binaryType = "arraybuffer";
+
+      ws.onopen = () => {
+        setStateSynced("listening");
+        setStatusMessage("Connected! Start speaking to Alt...");
