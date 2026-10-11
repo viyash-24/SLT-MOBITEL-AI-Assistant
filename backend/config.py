@@ -11,8 +11,11 @@ class Settings(BaseSettings):
     gemini_model: str = "gemini-2.5-flash"
     gemini_embedding_model: str = "models/gemini-embedding-001"
     pgvector_collection: str = "slt_mobitel_knowledge"
-    gemini_live_model: str = "gemini-2.5-flash-native-audio-latest"
-    gemini_live_voice: str = "Aoede"
+    livekit_api_key: str = ""
+    livekit_api_secret: str = ""
+    livekit_url: str = ""
+    livekit_room: str = "slt-mobitel-voice"
+    gemini_live_model: str = "gemini-2.5-flash-native-audio-preview-12-2025"
 
     model_config = SettingsConfigDict(
         env_file=Path(__file__).resolve().parent / ".env",
