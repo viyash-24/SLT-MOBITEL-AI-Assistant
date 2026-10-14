@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
   Globe,
@@ -16,6 +16,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { useLiveVoiceSession } from "../hooks/useLiveVoiceSession";
+import { Live3DAvatar } from "../components/Live3DAvatar";
 
 const LANGUAGES = [
   { code: "EN", label: "English", native: "English" },
@@ -42,7 +43,9 @@ export default function LiveAvatarVoicePage() {
     language: selectedLanguage,
   });
 
-  // Automatically start the live voice session upon landing on /voice
+  // Automatically start the live voice session upon landing on /voice.
+  // Runs once on mount (empty deps); subsequent language changes are handled
+  // by the effect below.
   useEffect(() => {
     const timer = setTimeout(() => {
       startSession();
@@ -51,15 +54,27 @@ export default function LiveAvatarVoicePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Re-start the session whenever the user switches language.
+  // Using an effect (not a setTimeout inside the event handler) guarantees
+  // that startSession() is called AFTER React has re-rendered with the new
+  // language value, so the hook receives the correct code.
+  const isFirstMount = useRef(true);
+  useEffect(() => {
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
+    }
+    // Only restart if a session is already running.
+    if (state !== "idle") {
+      startSession();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedLanguage]);
+
   const handleLanguageChange = (langCode: string) => {
     setSelectedLanguage(langCode);
     setLangMenuOpen(false);
-    // Restart session with the new language prompt
-    if (state !== "idle" && state !== "connecting") {
-      setTimeout(() => {
-        startSession();
-      }, 100);
-    }
+    // The useEffect above will restart the session when selectedLanguage changes.
   };
 
   const getStatusBadge = () => {
@@ -96,7 +111,14 @@ export default function LiveAvatarVoicePage() {
             <span>Back to Chat</span>
           </Link>
           <div className="brand-badge">
-            <Image src="/images/logo.svg" alt="SLT-MOBITEL" width={96} height={34} priority />
+            <Image
+              src="/images/logo.svg"
+              alt="SLT-MOBITEL"
+              width={96}
+              height={34}
+              style={{ width: "auto", height: "auto" }}
+              priority
+            />
           </div>
         </div>
 
@@ -148,14 +170,7 @@ export default function LiveAvatarVoicePage() {
             <div className="aura-pulse-2" style={{ transform: `scale(${1 + audioLevel * 0.45})` }} />
 
             <div className="avatar-image-container">
-              <Image
-                src="/images/avatar.jpg"
-                alt="Alt - SLT-MOBITEL AI Virtual Assistant"
-                width={320}
-                height={320}
-                className={`avatar-portrait ${state === "speaking" ? "speaking-anim" : ""}`}
-                priority
-              />
+              <Live3DAvatar state={state} audioLevel={audioLevel} />
 
               {/* Holographic state overlay badge */}
               <div className={`avatar-state-indicator state-${state}`}>
