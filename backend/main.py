@@ -1,8 +1,9 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from livekit import api
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from uuid import uuid4
+from typing import Literal
 
 from config import get_settings
 from rag import KNOWLEDGE_BASE, get_rag_service
@@ -20,8 +21,7 @@ app.add_middleware(
 
 
 class LiveKitTokenRequest(BaseModel):
-    room: str | None = Field(default=None, min_length=1, max_length=100)
-    language: str = Field(default="EN", min_length=2, max_length=10)
+    language: Literal["EN", "SI", "TA"] = "EN"
 
 
 class LiveKitTokenResponse(BaseModel):
@@ -61,12 +61,14 @@ def livekit_token(request: LiveKitTokenRequest) -> LiveKitTokenResponse:
             detail="LIVEKIT_URL must start with wss:// (or ws:// for local development).",
         )
 
-    room = request.room or f"{settings.livekit_room}-{request.language.lower()}-{uuid4().hex[:8]}"
+    language = request.language.upper()
+    room = f"{settings.livekit_room}-{language.lower()}-{uuid4().hex[:12]}"
     identity = f"customer-{uuid4().hex[:12]}"
     token = (
         api.AccessToken(livekit_api_key, livekit_api_secret)
         .with_identity(identity)
         .with_name("SLT-MOBITEL customer")
+        .with_metadata(language)
         .with_grants(
             api.VideoGrants(
                 room_join=True,
@@ -80,7 +82,7 @@ def livekit_token(request: LiveKitTokenRequest) -> LiveKitTokenResponse:
         token=token.to_jwt(),
         url=livekit_url,
         room=room,
-        language=request.language.upper(),
+        language=language,
     )
 
 
@@ -116,5 +118,4 @@ def reindex() -> dict[str, int | str]:
         raise HTTPException(status_code=503, detail=str(error)) from error
     except Exception as error:
         raise HTTPException(status_code=502, detail="Knowledge base indexing failed") from error
-
 
