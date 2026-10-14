@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ConnectionState, Room, RoomEvent, Track } from "livekit-client";
+import { ConnectionState, RemoteAudioTrack, Room, RoomEvent, Track } from "livekit-client";
 
 export type AvatarState =
   | "idle"
@@ -46,7 +46,7 @@ export function useLiveVoiceSession({ language = "EN" }: UseLiveVoiceSessionOpti
   const analyserRef = useRef<{
     context: AudioContext;
     analyser: AnalyserNode;
-    source: MediaElementAudioSourceNode;
+    source: MediaStreamAudioSourceNode | MediaElementAudioSourceNode;
     element: HTMLAudioElement;
     frame: number;
   } | null>(null);
@@ -83,23 +83,36 @@ export function useLiveVoiceSession({ language = "EN" }: UseLiveVoiceSessionOpti
     setAudioLevel(0);
   }, [stopAudioMonitor]);
 
-  const monitorAudio = useCallback((element: HTMLAudioElement) => {
+  const monitorAudio = useCallback((element: HTMLAudioElement, audioTrack?: RemoteAudioTrack) => {
     if (analyserRef.current) return;
     try {
-      const context = new AudioContext();
-      const source = context.createMediaElementSource(element);
+      const AudioCtx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const context = new AudioCtx();
       const analyser = context.createAnalyser();
-      // Larger FFT = finer frequency bins; 512 gives ~43 Hz per bin at 22 050 Hz nyquist
+      // 512 gives ~43 Hz per bin at 22 050 Hz nyquist
       analyser.fftSize = 512;
       analyser.smoothingTimeConstant = 0.7; // built-in temporal smoothing from Web Audio API
+
+      let source: MediaStreamAudioSourceNode | MediaElementAudioSourceNode;
+
+      // Prefer MediaStreamSource directly from WebRTC track to prevent double-speaker playback
+      // and bypass browser MediaElement silence issues.
+      if (audioTrack?.mediaStreamTrack) {
+        const stream = new MediaStream([audioTrack.mediaStreamTrack]);
+        source = context.createMediaStreamSource(stream);
+      } else {
+        source = context.createMediaElementSource(element);
+        analyser.connect(context.destination);
+      }
+
       source.connect(analyser);
-      analyser.connect(context.destination); // audio still plays through speakers
-      const binCount = analyser.frequencyBinCount; // fftSize / 2 = 256
+      const binCount = analyser.frequencyBinCount; // 256
       const freqData = new Uint8Array(binCount);
 
       // Determine speech-band bin range (~80 Hz – 3 500 Hz).
-      // sampleRate is usually 48 000 Hz; each bin = sampleRate / fftSize Hz.
-      const sampleRate = context.sampleRate;
+      const sampleRate = context.sampleRate || 48000;
       const hzPerBin = sampleRate / analyser.fftSize;
       const lowestBin = Math.max(1, Math.round(80 / hzPerBin));
       const highestBin = Math.min(binCount - 1, Math.round(3500 / hzPerBin));
@@ -119,15 +132,17 @@ export function useLiveVoiceSession({ language = "EN" }: UseLiveVoiceSessionOpti
         const now = performance.now();
         if (now - lastUiUpdate >= 25) {
           lastUiUpdate = now;
-          // Blend: 60% previous + 40% new → produces smooth but responsive level
-          setAudioLevel((current) => Math.min(1, current * 0.6 + avgEnergy * 2.8 * 0.4));
+          // Blend: 55% previous + 45% new → responsive and smooth lip sync level
+          setAudioLevel((current) => Math.min(1, current * 0.55 + avgEnergy * 3.0 * 0.45));
         }
         if (analyserRef.current) {
           analyserRef.current.frame = requestAnimationFrame(sample);
         }
       };
       analyserRef.current = { context, analyser, source, element, frame: requestAnimationFrame(sample) };
-      void context.resume();
+      if (context.state === "suspended") {
+        void context.resume();
+      }
     } catch {
       setErrorMessage("Live audio analysis is unavailable; voice playback will continue without lip sync.");
     }
@@ -199,7 +214,7 @@ export function useLiveVoiceSession({ language = "EN" }: UseLiveVoiceSessionOpti
         element.setAttribute("aria-hidden", "true");
         document.body.appendChild(element);
         audioElementsRef.current.push(element);
-        monitorAudio(element);
+        monitorAudio(element, track as RemoteAudioTrack);
         void element.play().catch(() => {
           setErrorMessage("Audio playback is blocked. Interact with the page and retry the voice session.");
         });
@@ -245,9 +260,12 @@ export function useLiveVoiceSession({ language = "EN" }: UseLiveVoiceSessionOpti
         }
       });
       room.on(RoomEvent.ActiveSpeakersChanged, (speakers) => {
-        if (speakers.some((participant) => participant !== room.localParticipant)) {
-          setAvatarState("speaking");
-          setStatusMessage("Alt is speaking...");
+        const isRemoteSpeaking = speakers.some((participant) => participant !== room.localParticipant);
+        if (isRemoteSpeaking) {
+          if (stateRef.current !== "speaking") {
+            setAvatarState("speaking");
+            setStatusMessage("Alt is speaking...");
+          }
         } else if (stateRef.current === "speaking") {
           setAvatarState("listening");
           setStatusMessage("Listening... Speak naturally");
@@ -260,15 +278,26 @@ export function useLiveVoiceSession({ language = "EN" }: UseLiveVoiceSessionOpti
         room.disconnect();
         return;
       }
-      await room.localParticipant.setMicrophoneEnabled(true);
+      await room.localParticipant.setMicrophoneEnabled(true, {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      });
       setIsMuted(false);
       setAvatarState("listening");
       setStatusMessage("Listening... Speak naturally");
     } catch (error) {
       await cleanup();
       setAvatarState("error");
+      const errName = error instanceof Error ? error.name : "";
       const message = error instanceof Error ? error.message : "Unable to start the LiveKit voice session.";
-      setErrorMessage(message.includes("token") ? `${message} Verify the LiveKit key, secret, and URL are from the same project.` : message);
+      if (errName === "NotAllowedError" || message.toLowerCase().includes("permission") || message.toLowerCase().includes("not allowed")) {
+        setErrorMessage("Microphone access was denied. Please allow microphone permissions in your browser and click Retry.");
+      } else if (message.includes("token")) {
+        setErrorMessage(`${message} Verify the LiveKit key, secret, and URL are from the same project.`);
+      } else {
+        setErrorMessage(message);
+      }
     } finally {
       startingRef.current = false;
     }
