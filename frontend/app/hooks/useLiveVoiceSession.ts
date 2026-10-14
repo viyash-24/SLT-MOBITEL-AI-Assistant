@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ConnectionState, Room, RoomEvent, Track } from "livekit-client";
 
 export type AvatarState =
   | "idle"
@@ -12,304 +13,299 @@ export type AvatarState =
 
 export type LiveVoiceSource = { title: string; category: string };
 
-export type UseLiveVoiceSessionOptions = {
-  language?: string;
+type LiveKitTokenResponse = {
+  token: string;
+  url: string;
+  room: string;
+  language: string;
 };
 
-export function useLiveVoiceSession({
-  language = "EN",
-}: UseLiveVoiceSessionOptions = {}) {
+type VoiceDataEvent =
+  | { type: "state"; state: AvatarState | "initializing" | "idle" }
+  | { type: "transcript"; role: "user" | "assistant"; text: string; final: string }
+  | { type: "source"; title: string; category: string };
+
+export type UseLiveVoiceSessionOptions = { language?: string };
+
+const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
+export function useLiveVoiceSession({ language = "EN" }: UseLiveVoiceSessionOptions = {}) {
   const [state, setState] = useState<AvatarState>("idle");
-  const [statusMessage, setStatusMessage] = useState<string>("Ready to connect");
+  const [statusMessage, setStatusMessage] = useState("Ready to connect");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(false);
-  const [assistantTranscript, setAssistantTranscript] = useState<string>("");
+  const [assistantTranscript, setAssistantTranscript] = useState("");
   const [sources, setSources] = useState<LiveVoiceSource[]>([]);
-  const [audioLevel, setAudioLevel] = useState<number>(0);
-
-  // ── Refs ──────────────────────────────────────────────────────────────────
-  const wsRef = useRef<WebSocket | null>(null);
-  const micStreamRef = useRef<MediaStream | null>(null);
-  const inputAudioCtxRef = useRef<AudioContext | null>(null);
-  const outputAudioCtxRef = useRef<AudioContext | null>(null);
-  const inputAnalyserRef = useRef<AnalyserNode | null>(null);
-  const outputAnalyserRef = useRef<AnalyserNode | null>(null);
-  const processorRef = useRef<ScriptProcessorNode | null>(null);
-  const isMutedRef = useRef(false);
-  const nextPlayTimeRef = useRef<number>(0);
-  const activeSourcesRef = useRef<AudioBufferSourceNode[]>([]);
-  const animationFrameRef = useRef<number | null>(null);
-
-  // stateRef mirrors state to avoid stale-closure bugs in async callbacks
-  const stateRef = useRef<AvatarState>("idle");
-
-  // intentionalCloseRef: true when user explicitly clicks "End Conversation"
-  // prevents auto-reconnect on user-initiated close
+  const [audioLevel, setAudioLevel] = useState(0);
+  const roomRef = useRef<Room | null>(null);
+  const audioElementsRef = useRef<HTMLAudioElement[]>([]);
   const intentionalCloseRef = useRef(false);
+  const stateRef = useRef<AvatarState>("idle");
+  const startingRef = useRef(false);
+  const generationRef = useRef(0);
+  const analyserRef = useRef<{
+    context: AudioContext;
+    analyser: AnalyserNode;
+    source: MediaElementAudioSourceNode;
+    element: HTMLAudioElement;
+    frame: number;
+  } | null>(null);
 
-  // startSessionRef: always points to the latest startSession so ws.onclose
-  // can call it without capturing a stale closure
-  const startSessionRef = useRef<(() => void) | null>(null);
-
-  // Keep stateRef in sync
-  useEffect(() => {
-    stateRef.current = state;
-  }, [state]);
-
-  useEffect(() => {
-    isMutedRef.current = isMuted;
-  }, [isMuted]);
-
-  // Atomic state setter that keeps stateRef in sync immediately (no render lag)
-  const setStateSynced = useCallback((s: AvatarState) => {
-    stateRef.current = s;
-    setState(s);
+  const setAvatarState = useCallback((next: AvatarState) => {
+    stateRef.current = next;
+    setState(next);
   }, []);
 
-  // ── Audio: stop playback ──────────────────────────────────────────────────
-  const stopAudioPlayback = useCallback(() => {
-    for (const src of activeSourcesRef.current) {
-      try {
-        src.stop();
-        src.disconnect();
-      } catch {
-        /* already stopped */
-      }
-    }
-    activeSourcesRef.current = [];
-    if (outputAudioCtxRef.current) {
-      nextPlayTimeRef.current = outputAudioCtxRef.current.currentTime;
-    }
+  const stopAudioMonitor = useCallback(() => {
+    const monitor = analyserRef.current;
+    if (!monitor) return;
+    cancelAnimationFrame(monitor.frame);
+    monitor.source.disconnect();
+    monitor.analyser.disconnect();
+    void monitor.context.close();
+    analyserRef.current = null;
   }, []);
 
-  // ── Full cleanup (audio + mic + WS) ───────────────────────────────────────
-  const cleanup = useCallback(() => {
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = null;
+  const cleanup = useCallback(async () => {
+    const room = roomRef.current;
+    roomRef.current = null;
+    audioElementsRef.current.forEach((element) => {
+      element.pause();
+      element.srcObject = null;
+      element.remove();
+    });
+    audioElementsRef.current = [];
+    if (room) {
+      await room.localParticipant.setMicrophoneEnabled(false).catch(() => undefined);
+      room.disconnect();
     }
-
-    stopAudioPlayback();
-
-    if (processorRef.current) {
-      try {
-        processorRef.current.disconnect();
-      } catch {}
-      processorRef.current = null;
-    }
-
-    if (micStreamRef.current) {
-      for (const t of micStreamRef.current.getTracks()) t.stop();
-      micStreamRef.current = null;
-    }
-
-    if (inputAudioCtxRef.current) {
-      try {
-        inputAudioCtxRef.current.close();
-      } catch {}
-      inputAudioCtxRef.current = null;
-    }
-
-    if (outputAudioCtxRef.current) {
-      try {
-        outputAudioCtxRef.current.close();
-      } catch {}
-      outputAudioCtxRef.current = null;
-    }
-
-    // Null analysers — they belong to the closed contexts above.
-    // Reusing them in a new context causes InvalidAccessError.
-    inputAnalyserRef.current = null;
-    outputAnalyserRef.current = null;
-
-    if (wsRef.current) {
-      try {
-        wsRef.current.close();
-      } catch {}
-      wsRef.current = null;
-    }
-
+    stopAudioMonitor();
     setAudioLevel(0);
-  }, [stopAudioPlayback]);
+  }, [stopAudioMonitor]);
 
-  // ── Audio energy loop for waveform visualizer ─────────────────────────────
-  const updateAudioEnergy = useCallback(() => {
-    const loop = () => {
-      let level = 0;
-      if (activeSourcesRef.current.length > 0 && outputAnalyserRef.current) {
-        const d = new Uint8Array(outputAnalyserRef.current.frequencyBinCount);
-        outputAnalyserRef.current.getByteFrequencyData(d);
+  const monitorAudio = useCallback((element: HTMLAudioElement) => {
+    if (analyserRef.current) return;
+    try {
+      const context = new AudioContext();
+      const source = context.createMediaElementSource(element);
+      const analyser = context.createAnalyser();
+      // Larger FFT = finer frequency bins; 512 gives ~43 Hz per bin at 22 050 Hz nyquist
+      analyser.fftSize = 512;
+      analyser.smoothingTimeConstant = 0.7; // built-in temporal smoothing from Web Audio API
+      source.connect(analyser);
+      analyser.connect(context.destination); // audio still plays through speakers
+      const binCount = analyser.frequencyBinCount; // fftSize / 2 = 256
+      const freqData = new Uint8Array(binCount);
+
+      // Determine speech-band bin range (~80 Hz – 3 500 Hz).
+      // sampleRate is usually 48 000 Hz; each bin = sampleRate / fftSize Hz.
+      const sampleRate = context.sampleRate;
+      const hzPerBin = sampleRate / analyser.fftSize;
+      const lowestBin = Math.max(1, Math.round(80 / hzPerBin));
+      const highestBin = Math.min(binCount - 1, Math.round(3500 / hzPerBin));
+      const speechBinCount = highestBin - lowestBin + 1;
+
+      let lastUiUpdate = 0;
+      const sample = () => {
+        analyser.getByteFrequencyData(freqData);
+
+        // Average energy over speech frequency band
         let sum = 0;
-        for (let i = 0; i < d.length; i++) sum += d[i];
-        level = Math.min(1, (sum / d.length) / 100);
-      } else if (inputAnalyserRef.current && !isMutedRef.current) {
-        const d = new Uint8Array(inputAnalyserRef.current.frequencyBinCount);
-        inputAnalyserRef.current.getByteFrequencyData(d);
-        let sum = 0;
-        for (let i = 0; i < d.length; i++) sum += d[i];
-        level = Math.min(1, (sum / d.length) / 100);
-      }
-      setAudioLevel(level);
-      animationFrameRef.current = requestAnimationFrame(loop);
-    };
-    if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
-    animationFrameRef.current = requestAnimationFrame(loop);
+        for (let i = lowestBin; i <= highestBin; i++) {
+          sum += freqData[i];
+        }
+        const avgEnergy = sum / (speechBinCount * 255); // 0..1
+
+        const now = performance.now();
+        if (now - lastUiUpdate >= 25) {
+          lastUiUpdate = now;
+          // Blend: 60% previous + 40% new → produces smooth but responsive level
+          setAudioLevel((current) => Math.min(1, current * 0.6 + avgEnergy * 2.8 * 0.4));
+        }
+        if (analyserRef.current) {
+          analyserRef.current.frame = requestAnimationFrame(sample);
+        }
+      };
+      analyserRef.current = { context, analyser, source, element, frame: requestAnimationFrame(sample) };
+      void context.resume();
+    } catch {
+      setErrorMessage("Live audio analysis is unavailable; voice playback will continue without lip sync.");
+    }
   }, []);
 
-  // ── Play a base64-encoded 24kHz PCM chunk from the assistant ─────────────
-  const playPcmChunk = useCallback(
-    (base64Data: string) => {
-      try {
-        // Create / resume output AudioContext
-        if (!outputAudioCtxRef.current) {
-          const AC =
-            window.AudioContext ||
-            (window as unknown as { webkitAudioContext: typeof AudioContext })
-              .webkitAudioContext;
-          outputAudioCtxRef.current = new AC({ sampleRate: 24000 });
-        }
-        const ctx = outputAudioCtxRef.current;
-        if (ctx.state === "suspended") ctx.resume();
-
-        // Re-create analyser if context changed (cross-context guard)
-        if (
-          !outputAnalyserRef.current ||
-          outputAnalyserRef.current.context !== ctx
-        ) {
-          outputAnalyserRef.current = ctx.createAnalyser();
-          outputAnalyserRef.current.fftSize = 256;
-          outputAnalyserRef.current.connect(ctx.destination);
-        }
-
-        // Decode base64 → Int16 PCM → Float32
-        const binary = window.atob(base64Data);
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-
-        const numSamples = Math.floor(bytes.length / 2);
-        if (numSamples === 0) return;
-
-        const f32 = new Float32Array(numSamples);
-        const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-        for (let i = 0; i < numSamples; i++) {
-          const s = view.getInt16(i * 2, true);
-          f32[i] = s < 0 ? s / 32768 : s / 32767;
-        }
-
-        const buf = ctx.createBuffer(1, numSamples, 24000);
-        buf.getChannelData(0).set(f32);
-
-        const source = ctx.createBufferSource();
-        source.buffer = buf;
-        source.connect(outputAnalyserRef.current);
-
-        const now = ctx.currentTime;
-        const startAt = Math.max(now, nextPlayTimeRef.current);
-        source.start(startAt);
-        nextPlayTimeRef.current = startAt + buf.duration;
-
-        activeSourcesRef.current.push(source);
-        source.onended = () => {
-          activeSourcesRef.current = activeSourcesRef.current.filter(
-            (s) => s !== source
-          );
-          // When all audio drains → return to listening
-          if (
-            activeSourcesRef.current.length === 0 &&
-            stateRef.current === "speaking"
-          ) {
-            stateRef.current = "listening";
-            setState("listening");
-            setStatusMessage("Listening... Speak naturally");
-          }
-        };
-
-        setStateSynced("speaking");
-        setStatusMessage("Alt is speaking...");
-      } catch (err) {
-        console.error("playPcmChunk error:", err);
-      }
-    },
-    [setStateSynced]
-  );
-
-  // ── Start a live voice session ────────────────────────────────────────────
   const startSession = useCallback(async () => {
-    // Reset intentional-close flag on every new session start
+    if (startingRef.current || roomRef.current) return;
+    startingRef.current = true;
+    const generation = ++generationRef.current;
     intentionalCloseRef.current = false;
-
-    cleanup();
+    await cleanup();
     setErrorMessage(null);
-    setStateSynced("connecting");
-    setStatusMessage("Connecting to SLT-MOBITEL Live Assistant...");
     setAssistantTranscript("");
     setSources([]);
+    setAvatarState("connecting");
+    setStatusMessage("Connecting to LiveKit...");
 
     try {
-      if (!navigator.mediaDevices?.getUserMedia) {
-        throw new Error("Microphone access is not supported in this browser.");
+      const response = await fetch(`${apiUrl}/api/livekit/token`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ language }),
+      });
+      const payload = (await response.json().catch(() => null)) as
+        | LiveKitTokenResponse
+        | { detail?: string }
+        | null;
+      if (!response.ok || !payload || !("token" in payload)) {
+        throw new Error((payload && "detail" in payload && payload.detail) || "LiveKit token service is unavailable.");
+      }
+      const livekitUrl = payload.url.trim();
+      const livekitToken = payload.token.trim();
+      if (!livekitUrl.startsWith("wss://") && !livekitUrl.startsWith("ws://")) {
+        throw new Error("The backend returned an invalid LiveKit URL.");
+      }
+      if (livekitToken.split(".").length !== 3) {
+        throw new Error("The backend returned an invalid LiveKit token.");
       }
 
-      // 1. Request microphone (audio-only, voice-optimised)
-      let stream: MediaStream;
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            channelCount: 1,
-            sampleRate: 16000,
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true,
-          },
-          video: false,
+      const room = new Room({ adaptiveStream: true, dynacast: true });
+      roomRef.current = room;
+      room.on(RoomEvent.ConnectionStateChanged, (connectionState) => {
+        if (connectionState === ConnectionState.Reconnecting) {
+          setAvatarState("connecting");
+          setStatusMessage("Reconnecting to the voice service...");
+        }
+        if (connectionState === ConnectionState.Disconnected && !intentionalCloseRef.current) {
+          setAvatarState("error");
+          setErrorMessage("The LiveKit voice connection was lost.");
+        }
+      });
+      room.on(RoomEvent.Disconnected, (reason) => {
+        if (intentionalCloseRef.current) return;
+        const detail = reason ? ` (${String(reason)})` : "";
+        setAvatarState("error");
+        setErrorMessage(`LiveKit disconnected${detail}. Check that the API key and secret belong to this LiveKit project.`);
+      });
+      room.on(RoomEvent.TrackSubscribed, (track) => {
+        if (track.kind !== Track.Kind.Audio) return;
+        // Avoid duplicate elements: detach any existing elements for this track first.
+        track.detach().forEach((el) => {
+          el.pause();
+          el.srcObject = null;
+          el.remove();
+          audioElementsRef.current = audioElementsRef.current.filter((item) => item !== el);
         });
-        micStreamRef.current = stream;
-      } catch (micErr: unknown) {
-        const e = micErr as { name?: string };
-        if (e.name === "NotAllowedError" || e.name === "PermissionDeniedError") {
-          throw new Error(
-            "Microphone permission denied. Please allow microphone access in browser settings."
-          );
+        const element = track.attach() as HTMLAudioElement;
+        element.autoplay = true;
+        element.setAttribute("aria-hidden", "true");
+        document.body.appendChild(element);
+        audioElementsRef.current.push(element);
+        monitorAudio(element);
+        void element.play().catch(() => {
+          setErrorMessage("Audio playback is blocked. Interact with the page and retry the voice session.");
+        });
+      });
+      room.on(RoomEvent.TrackUnsubscribed, (track) => {
+        const detached = track.detach();
+        detached.forEach((element) => {
+          if (analyserRef.current?.element === element) {
+            stopAudioMonitor();
+            setAudioLevel(0);
+          }
+          element.pause();
+          element.srcObject = null;
+          element.remove();
+          audioElementsRef.current = audioElementsRef.current.filter((item) => item !== element);
+        });
+      });
+      room.on(RoomEvent.DataReceived, (payload, participant) => {
+        if (!participant) return;
+        try {
+          const event = JSON.parse(new TextDecoder().decode(payload)) as VoiceDataEvent;
+          if (event.type === "state") {
+            const nextState = event.state === "initializing" ? "connecting" : event.state;
+            if (["connecting", "listening", "thinking", "speaking"].includes(nextState)) {
+              setAvatarState(nextState as AvatarState);
+            }
+          } else if (event.type === "transcript" && event.role === "assistant") {
+            setAssistantTranscript((current) => `${current} ${event.text}`.trim());
+          } else if (event.type === "source") {
+            setSources((current) => current.some((source) => source.title === event.title) ? current : [...current, event]);
+          }
+        } catch {
+          setErrorMessage("Received an invalid voice event from the agent.");
         }
-        if (e.name === "NotFoundError" || e.name === "DevicesNotFoundError") {
-          throw new Error("No microphone found on your device.");
+      });
+      room.on(RoomEvent.ParticipantAttributesChanged, (attributes, participant) => {
+        // Only react to the remote agent participant, not the local customer mic track.
+        if (participant === room.localParticipant) return;
+        const agentState = attributes["lk.agent.state"];
+        if (agentState === "speaking" || agentState === "thinking" || agentState === "listening") {
+          setAvatarState(agentState);
+          setStatusMessage(agentState === "speaking" ? "Alt is speaking..." : agentState === "thinking" ? "Checking SLT-MOBITEL knowledge..." : "Listening... Speak naturally");
         }
-        throw new Error(
-          "Unable to access microphone. Please check your audio settings."
-        );
+      });
+      room.on(RoomEvent.ActiveSpeakersChanged, (speakers) => {
+        if (speakers.some((participant) => participant !== room.localParticipant)) {
+          setAvatarState("speaking");
+          setStatusMessage("Alt is speaking...");
+        } else if (stateRef.current === "speaking") {
+          setAvatarState("listening");
+          setStatusMessage("Listening... Speak naturally");
+          setAudioLevel(0);
+        }
+      });
+
+      await room.connect(livekitUrl, livekitToken);
+      if (generation !== generationRef.current) {
+        room.disconnect();
+        return;
       }
+      await room.localParticipant.setMicrophoneEnabled(true);
+      setIsMuted(false);
+      setAvatarState("listening");
+      setStatusMessage("Listening... Speak naturally");
+    } catch (error) {
+      await cleanup();
+      setAvatarState("error");
+      const message = error instanceof Error ? error.message : "Unable to start the LiveKit voice session.";
+      setErrorMessage(message.includes("token") ? `${message} Verify the LiveKit key, secret, and URL are from the same project.` : message);
+    } finally {
+      startingRef.current = false;
+    }
+  }, [cleanup, language, monitorAudio, setAvatarState, stopAudioMonitor]);
 
-      // 2. Input AudioContext at 16kHz
-      //    Buffer size 512 → 32ms chunks (much lower latency than 2048=128ms)
-      const AC =
-        window.AudioContext ||
-        (window as unknown as { webkitAudioContext: typeof AudioContext })
-          .webkitAudioContext;
-      const inputCtx = new AC({ sampleRate: 16000 });
-      inputAudioCtxRef.current = inputCtx;
+  const endSession = useCallback(async () => {
+    intentionalCloseRef.current = true;
+    generationRef.current += 1;
+    await cleanup();
+    startingRef.current = false;
+    setIsMuted(false);
+    setAssistantTranscript("");
+    setAvatarState("idle");
+    setStatusMessage("Ready to connect");
+  }, [cleanup, setAvatarState]);
 
-      const srcNode = inputCtx.createMediaStreamSource(stream);
-      const analyser = inputCtx.createAnalyser();
-      analyser.fftSize = 256;
-      inputAnalyserRef.current = analyser;
-      srcNode.connect(analyser);
+  const toggleMute = useCallback(async () => {
+    const nextMuted = !isMuted;
+    setIsMuted(nextMuted);
+    await roomRef.current?.localParticipant.setMicrophoneEnabled(!nextMuted);
+    setStatusMessage(nextMuted ? "Microphone muted" : "Listening... Speak naturally");
+  }, [isMuted]);
 
-      const processor = inputCtx.createScriptProcessor(1024, 1, 1);
-      processorRef.current = processor;
+  useEffect(() => () => {
+    void cleanup();
+  }, [cleanup]);
 
-      // 3. WebSocket to FastAPI backend with actual mic sampleRate
-      const apiBase =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-      const proto = apiBase.startsWith("https") ? "wss:" : "ws:";
-      const host = apiBase.replace(/^https?:\/\//, "");
-      const sid = `live-${Date.now()}`;
-      const actualSampleRate = inputCtx.sampleRate || 16000;
-      const wsUrl = `${proto}//${host}/api/voice/live?session_id=${sid}&language=${encodeURIComponent(language)}&sample_rate=${actualSampleRate}`;
-
-      const ws = new WebSocket(wsUrl);
-      wsRef.current = ws;
-      ws.binaryType = "arraybuffer";
-
-      ws.onopen = () => {
-        setStateSynced("listening");
-        setStatusMessage("Connected! Start speaking to Alt...");
+  return {
+    state,
+    statusMessage,
+    errorMessage,
+    isMuted,
+    assistantTranscript,
+    sources,
+    audioLevel,
+    startSession,
+    endSession,
+    toggleMute,
+  };
+}
