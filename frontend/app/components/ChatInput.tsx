@@ -1,15 +1,13 @@
 "use client";
 
-import { ArrowUp, Mic } from "lucide-react";
+import { ArrowUp } from "lucide-react";
 import { FormEvent, useState } from "react";
 
 type ChatInputProps = {
   onSubmit: (value: string) => void;
-  isListening?: boolean;
-  onToggleVoice?: () => void;
 };
 
-export function ChatInput({ onSubmit, isListening, onToggleVoice }: ChatInputProps) {
+export function ChatInput({ onSubmit }: ChatInputProps) {
   const [value, setValue] = useState("");
 
   const submit = (event: FormEvent) => {
@@ -27,10 +25,10 @@ export function ChatInput({ onSubmit, isListening, onToggleVoice }: ChatInputPro
       <input
         value={value}
         onChange={(event) => setValue(event.target.value)}
-        placeholder={isListening ? "Listening to your voice..." : "Ask SLT-MOBITEL AI Assistant about broadband, bills, packages..."}
+        placeholder="Ask SLT-MOBITEL AI Assistant about broadband, bills, packages..."
         aria-label="Ask the assistant"
       />
-      
+
       <button
         className={`send-button ${hasText ? "active" : "inactive"}`}
         type="submit"
