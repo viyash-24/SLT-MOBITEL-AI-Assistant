@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { CheckCheck, ChevronDown, Copy, FileText, Globe2, RefreshCw, Share2, ThumbsDown, ThumbsUp, Verified, Volume2, VolumeX } from "lucide-react";
+import { CheckCheck, ChevronDown, Copy, FileText, Globe2, RefreshCw, Share2, ThumbsDown, ThumbsUp, Verified } from "lucide-react";
 import { Fragment, useState, type ReactNode } from "react";
 import type { ChatMessageData } from "../types/chat";
 
@@ -10,9 +10,6 @@ type ChatMessageProps = {
   openSource: boolean;
   onToggleSource: () => void;
   onCopy: (text: string) => void;
-  isSpeaking?: boolean;
-  onSpeak?: (text: string) => void;
-  onStopSpeak?: () => void;
 };
 
 const plans = [
@@ -59,9 +56,6 @@ export function ChatMessage({
   openSource,
   onToggleSource,
   onCopy,
-  isSpeaking,
-  onSpeak,
-  onStopSpeak,
 }: ChatMessageProps) {
   const [copyDone, setCopyDone] = useState(false);
 
@@ -202,20 +196,6 @@ export function ChatMessage({
           <button aria-label="Copy response" onClick={handleCopy} title="Copy text">
             <Copy size={15} />
             {copyDone && <span style={{ fontSize: "11px", marginLeft: "4px" }}>Copied!</span>}
-          </button>
-          <button
-            aria-label={isSpeaking ? "Stop reading aloud" : "Read aloud"}
-            title={isSpeaking ? "Stop reading aloud" : "Read aloud"}
-            className={isSpeaking ? "speech-active-btn" : ""}
-            onClick={() => {
-              if (isSpeaking && onStopSpeak) {
-                onStopSpeak();
-              } else if (onSpeak) {
-                onSpeak(message.content);
-              }
-            }}
-          >
-            {isSpeaking ? <VolumeX size={15} /> : <Volume2 size={15} />}
           </button>
           <button aria-label="Helpful response"><ThumbsUp size={15} /></button>
           <button aria-label="Not helpful"><ThumbsDown size={15} /></button>
