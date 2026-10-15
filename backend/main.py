@@ -1,3 +1,4 @@
+from datetime import timedelta
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from livekit import api
@@ -69,11 +70,13 @@ def livekit_token(request: LiveKitTokenRequest) -> LiveKitTokenResponse:
         .with_identity(identity)
         .with_name("SLT-MOBITEL customer")
         .with_metadata(language)
+        .with_ttl(timedelta(minutes=15))
         .with_grants(
             api.VideoGrants(
                 room_join=True,
                 room=room,
                 can_publish=True,
+                can_publish_data=True,
                 can_subscribe=True,
             )
         )
