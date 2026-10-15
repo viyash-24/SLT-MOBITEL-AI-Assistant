@@ -1,7 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ConnectionState, RemoteAudioTrack, Room, RoomEvent, Track } from "livekit-client";
+import { ConnectionState, RemoteAudioTrack, Room, RoomEvent, Track, setLogLevel } from "livekit-client";
+
+// Set LiveKit client log level to error to silence harmless background region settings warnings
+setLogLevel("error");
 
 export type AvatarState =
   | "idle"
