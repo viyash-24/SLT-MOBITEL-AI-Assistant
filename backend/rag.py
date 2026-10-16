@@ -144,52 +144,24 @@ class RagService:
         return [document for _, document in scored_documents[:k]]
 
     def chat(self, request: ChatRequest) -> ChatResponse:
-        self._require_configuration()
-        session_id = request.session_id or str(uuid4())
-        try:
-            documents = self._vector_store().similarity_search(request.message, k=5)
-        except Exception:
-            documents = self._fallback_search(request.message, k=5)
+        """Process chat request via the shared AssistantService."""
+        from app.dependencies import get_assistant_service
+        from app.domain.models.chat import AssistantRequest, ChatTurn
 
-        if not documents:
-            answer = "I do not have enough verified information to answer that. Please call 1212 for assistance."
-            save_chat_exchange(self.settings, session_id, request.message, answer, "low", [])
-            return ChatResponse(
-                session_id=session_id,
-                answer=answer,
-                sources=[],
-                confidence="low",
-            )
-
-        context_blocks = []
-        for doc in documents:
-            title = doc.metadata.get("title") or doc.metadata.get("source") or "Document"
-            category = doc.metadata.get("category", "")
-            header = f"[{title} | Category: {category}]" if category else f"[{title}]"
-            context_blocks.append(f"{header}\n{doc.page_content}")
-        context = "\n\n---\n\n".join(context_blocks)
-
-        history = "\n".join(f"{turn.role}: {turn.content}" for turn in request.history)
-        answer = generate_answer(self.settings, context, history, request.message)
-        source_values: list[tuple[str, str]] = []
-        for document in documents:
-            source = (
-                document.metadata.get("title", "SLT-MOBITEL information"),
-                document.metadata.get("category", "General"),
-            )
-            if source not in source_values:
-                source_values.append(source)
-        sources = [Source(title=title, category=category) for title, category in source_values]
-        confidence = "high" if len(documents) >= 2 else "medium"
-        save_chat_exchange(
-            self.settings,
-            session_id,
-            request.message,
-            answer,
-            confidence,
-            [source.model_dump() for source in sources],
+        assistant = get_assistant_service()
+        domain_req = AssistantRequest(
+            message=request.message,
+            history=[ChatTurn(role=t.role, content=t.content) for t in request.history],
+            session_id=request.session_id,
+            channel="text",
         )
-        return ChatResponse(session_id=session_id, answer=answer, sources=sources, confidence=confidence)
+        result = assistant.answer(domain_req)
+        return ChatResponse(
+            session_id=result.session_id,
+            answer=result.answer,
+            sources=[Source(title=s.title, category=s.category) for s in result.sources],
+            confidence=result.confidence,
+        )
 
 
 @lru_cache
