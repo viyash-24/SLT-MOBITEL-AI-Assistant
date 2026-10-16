@@ -1,7 +1,12 @@
-import json
+"""Database operations and health check.
+
+Delegates persistence to the pooled PostgresChatRepository (Repository Pattern).
+"""
+from __future__ import annotations
 
 from sqlalchemy import create_engine, text
 
+from app.infrastructure.repositories.postgres_chat_repository import get_chat_repository
 from config import Settings
 
 
@@ -26,44 +31,14 @@ def save_chat_exchange(
     confidence: str,
     sources: list[dict[str, str]],
 ) -> bool:
+    """Save exchange via the repository pattern with connection pooling."""
     if not settings.database_configured:
         return False
-
-    try:
-        engine = create_engine(settings.database_url, pool_pre_ping=True)
-        with engine.begin() as connection:
-            connection.execute(text("""
-                CREATE TABLE IF NOT EXISTS chat_messages (
-                    id BIGSERIAL PRIMARY KEY,
-                    session_id VARCHAR(120) NOT NULL,
-                    role VARCHAR(20) NOT NULL CHECK (role IN ('user', 'assistant')),
-                    content TEXT NOT NULL,
-                    confidence VARCHAR(20),
-                    sources TEXT NOT NULL DEFAULT '[]',
-                    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
-                )
-            """))
-            insert_message = text("""
-                INSERT INTO chat_messages
-                    (session_id, role, content, confidence, sources)
-                VALUES
-                    (:session_id, :role, :content, :confidence, :sources)
-            """)
-            connection.execute(insert_message, {
-                "session_id": session_id,
-                "role": "user",
-                "content": user_message,
-                "confidence": None,
-                "sources": "[]",
-            })
-            connection.execute(insert_message, {
-                "session_id": session_id,
-                "role": "assistant",
-                "content": assistant_message,
-                "confidence": confidence,
-                "sources": json.dumps(sources),
-            })
-        engine.dispose()
-        return True
-    except Exception:
-        return False
+    repo = get_chat_repository(settings.database_url)
+    return repo.save_exchange(
+        session_id=session_id,
+        user_message=user_message,
+        assistant_message=assistant_message,
+        confidence=confidence,
+        sources=sources,
+    )
