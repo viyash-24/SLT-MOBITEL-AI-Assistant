@@ -1,10 +1,27 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import log from "loglevel";
 import { ConnectionState, RemoteAudioTrack, Room, RoomEvent, Track, setLogLevel } from "livekit-client";
+import { fetchLiveKitToken, validateLiveKitCredentials } from "../services/livekitService";
 
 // Set LiveKit client log level to error to silence harmless background region settings warnings
 setLogLevel("error");
+
+// Filter out the harmless internal WebSocket tear-down message ("error reading from signal stream")
+// which is triggered whenever a session ends, page reloads, or reconnects.
+try {
+  const signalLogger = log.getLogger("livekit-signal");
+  const origError = signalLogger.error.bind(signalLogger);
+  signalLogger.error = (msg: unknown, ...args: unknown[]) => {
+    if (typeof msg === "string" && msg.includes("error reading from signal stream")) {
+      return;
+    }
+    origError(msg, ...args);
+  };
+} catch {
+  // Ignore logger hook failure in non-browser environments
+}
 
 export type AvatarState =
   | "idle"
@@ -65,7 +82,7 @@ export function useLiveVoiceSession({ language = "EN" }: UseLiveVoiceSessionOpti
     cancelAnimationFrame(monitor.frame);
     monitor.source.disconnect();
     monitor.analyser.disconnect();
-    void monitor.context.close();
+    void monitor.context.close().catch(() => undefined);
     analyserRef.current = null;
   }, []);
 
@@ -73,14 +90,22 @@ export function useLiveVoiceSession({ language = "EN" }: UseLiveVoiceSessionOpti
     const room = roomRef.current;
     roomRef.current = null;
     audioElementsRef.current.forEach((element) => {
-      element.pause();
-      element.srcObject = null;
-      element.remove();
+      try {
+        element.pause();
+        element.srcObject = null;
+        element.remove();
+      } catch {
+        // ignore
+      }
     });
     audioElementsRef.current = [];
     if (room) {
-      await room.localParticipant.setMicrophoneEnabled(false).catch(() => undefined);
-      room.disconnect();
+      try {
+        await room.localParticipant.setMicrophoneEnabled(false).catch(() => undefined);
+        await room.disconnect();
+      } catch {
+        // ignore disconnect failures during cleanup
+      }
     }
     stopAudioMonitor();
     setAudioLevel(0);
@@ -152,7 +177,7 @@ export function useLiveVoiceSession({ language = "EN" }: UseLiveVoiceSessionOpti
   }, []);
 
   const startSession = useCallback(async () => {
-    if (startingRef.current || roomRef.current) return;
+    if (startingRef.current) return;
     startingRef.current = true;
     const generation = ++generationRef.current;
     intentionalCloseRef.current = false;
@@ -164,26 +189,11 @@ export function useLiveVoiceSession({ language = "EN" }: UseLiveVoiceSessionOpti
     setStatusMessage("Connecting to LiveKit...");
 
     try {
-      const response = await fetch(`${apiUrl}/api/livekit/token`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ language }),
-      });
-      const payload = (await response.json().catch(() => null)) as
-        | LiveKitTokenResponse
-        | { detail?: string }
-        | null;
-      if (!response.ok || !payload || !("token" in payload)) {
-        throw new Error((payload && "detail" in payload && payload.detail) || "LiveKit token service is unavailable.");
-      }
-      const livekitUrl = payload.url.trim();
-      const livekitToken = payload.token.trim();
-      if (!livekitUrl.startsWith("wss://") && !livekitUrl.startsWith("ws://")) {
-        throw new Error("The backend returned an invalid LiveKit URL.");
-      }
-      if (livekitToken.split(".").length !== 3) {
-        throw new Error("The backend returned an invalid LiveKit token.");
-      }
+      // ── Fetch LiveKit token via livekitService (Service module pattern) ─────
+      const liveKitPayload = await fetchLiveKitToken(language);
+      const livekitUrl = liveKitPayload.url.trim();
+      const livekitToken = liveKitPayload.token.trim();
+      validateLiveKitCredentials(livekitUrl, livekitToken);
 
       const room = new Room({ adaptiveStream: true, dynacast: true });
       roomRef.current = room;
@@ -203,6 +213,13 @@ export function useLiveVoiceSession({ language = "EN" }: UseLiveVoiceSessionOpti
         setAvatarState("error");
         setErrorMessage(`LiveKit disconnected${detail}. Check that the API key and secret belong to this LiveKit project.`);
       });
+      room.on(RoomEvent.AudioPlaybackStatusChanged, () => {
+        if (!room.canPlaybackAudio) {
+          setErrorMessage("Click anywhere on the screen to enable agent voice audio.");
+        } else {
+          setErrorMessage((current) => (current?.includes("enable agent voice") ? null : current));
+        }
+      });
       room.on(RoomEvent.TrackSubscribed, (track) => {
         if (track.kind !== Track.Kind.Audio) return;
         // Avoid duplicate elements: detach any existing elements for this track first.
@@ -219,7 +236,7 @@ export function useLiveVoiceSession({ language = "EN" }: UseLiveVoiceSessionOpti
         audioElementsRef.current.push(element);
         monitorAudio(element, track as RemoteAudioTrack);
         void element.play().catch(() => {
-          setErrorMessage("Audio playback is blocked. Interact with the page and retry the voice session.");
+          room.startAudio().catch(() => undefined);
         });
       });
       room.on(RoomEvent.TrackUnsubscribed, (track) => {
@@ -278,7 +295,7 @@ export function useLiveVoiceSession({ language = "EN" }: UseLiveVoiceSessionOpti
 
       await room.connect(livekitUrl, livekitToken);
       if (generation !== generationRef.current) {
-        room.disconnect();
+        await room.disconnect().catch(() => undefined);
         return;
       }
       await room.localParticipant.setMicrophoneEnabled(true, {
@@ -323,6 +340,24 @@ export function useLiveVoiceSession({ language = "EN" }: UseLiveVoiceSessionOpti
     await roomRef.current?.localParticipant.setMicrophoneEnabled(!nextMuted);
     setStatusMessage(nextMuted ? "Microphone muted" : "Listening... Speak naturally");
   }, [isMuted]);
+
+  // Unlock browser audio autoplay policy as soon as user clicks anywhere on the page
+  useEffect(() => {
+    const unlockAudio = () => {
+      const room = roomRef.current;
+      if (room && !room.canPlaybackAudio) {
+        room.startAudio().catch(() => undefined);
+      }
+    };
+    window.addEventListener("click", unlockAudio);
+    window.addEventListener("touchstart", unlockAudio);
+    window.addEventListener("keydown", unlockAudio);
+    return () => {
+      window.removeEventListener("click", unlockAudio);
+      window.removeEventListener("touchstart", unlockAudio);
+      window.removeEventListener("keydown", unlockAudio);
+    };
+  }, []);
 
   useEffect(() => () => {
     void cleanup();
