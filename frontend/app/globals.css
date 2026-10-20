@@ -942,3 +942,113 @@ code { background: var(--pale, #e1eaf4); border-radius: 4px; color: var(--blue);
     justify-content: center;
   }
 }
+
+/* ── Tavus Avatar View ───────────────────────────────────────────────────── */
+/* Styles for TavusAvatarView component (replaces the Three.js Live3DAvatar) */
+
+.tavus-avatar-shell {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+  background: radial-gradient(circle at 40% 30%, #0f2a4a 0%, #091828 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Tavus video element: fills the shell once the track arrives */
+.tavus-avatar-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  transition: opacity 0.4s ease;
+}
+
+.tavus-video-live {
+  opacity: 1;
+}
+
+.tavus-video-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Connecting overlay — centered spinner shown while Tavus conversation starts */
+.tavus-overlay-connecting {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #64e8ef;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+.tavus-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(100, 232, 239, 0.2);
+  border-top-color: #64e8ef;
+  border-radius: 50%;
+  animation: tavus-spin 0.9s linear infinite;
+}
+
+@keyframes tavus-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Disabled / error fallback — static portrait with label */
+.tavus-overlay-disabled,
+.tavus-overlay-error {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px;
+  text-align: center;
+}
+
+.tavus-fallback-portrait {
+  border-radius: 50%;
+  object-fit: cover;
+  width: 80%;
+  height: 80%;
+}
+
+.tavus-fallback-label {
+  color: #9ab4d0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.tavus-error-label {
+  color: #f87171;
+  font-size: 11px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.tavus-error-detail {
+  color: #9ab4d0;
+  font-size: 10px;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 90%;
+}
