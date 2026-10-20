@@ -16,7 +16,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { useLiveVoiceSession } from "../hooks/useLiveVoiceSession";
-import { Live3DAvatar } from "../components/Live3DAvatar";
+import { TavusAvatarView } from "../components/TavusAvatarView";
 
 const LANGUAGES = [
   { code: "EN", label: "English", native: "English" },
@@ -36,6 +36,9 @@ export default function LiveAvatarVoicePage() {
     assistantTranscript,
     sources,
     audioLevel,
+    avatarStatus,
+    avatarError,
+    room,
     startSession,
     endSession,
     toggleMute,
@@ -44,8 +47,6 @@ export default function LiveAvatarVoicePage() {
   });
 
   // Automatically start the live voice session upon landing on /voice.
-  // Runs once on mount (empty deps); subsequent language changes are handled
-  // by the effect below.
   useEffect(() => {
     const timer = setTimeout(() => {
       startSession();
@@ -55,16 +56,12 @@ export default function LiveAvatarVoicePage() {
   }, []);
 
   // Re-start the session whenever the user switches language.
-  // Using an effect (not a setTimeout inside the event handler) guarantees
-  // that startSession() is called AFTER React has re-rendered with the new
-  // language value, so the hook receives the correct code.
   const isFirstMount = useRef(true);
   useEffect(() => {
     if (isFirstMount.current) {
       isFirstMount.current = false;
       return;
     }
-    // Only restart if a session is already running.
     if (state !== "idle") {
       startSession();
     }
@@ -74,7 +71,6 @@ export default function LiveAvatarVoicePage() {
   const handleLanguageChange = (langCode: string) => {
     setSelectedLanguage(langCode);
     setLangMenuOpen(false);
-    // The useEffect above will restart the session when selectedLanguage changes.
   };
 
   const getStatusBadge = () => {
@@ -162,7 +158,6 @@ export default function LiveAvatarVoicePage() {
 
       {/* Main Avatar Stage */}
       <main className="live-avatar-stage">
-        {/* Avatar Representation */}
         <div className="avatar-frame-wrap">
           <div className={`avatar-aura-ring aura-${state}`}>
             {/* Pulsing visual energy rings */}
@@ -170,7 +165,19 @@ export default function LiveAvatarVoicePage() {
             <div className="aura-pulse-2" style={{ transform: `scale(${1 + audioLevel * 0.45})` }} />
 
             <div className="avatar-image-container">
-              <Live3DAvatar state={state} audioLevel={audioLevel} />
+              {/**
+               * TavusAvatarView replaces the former Live3DAvatar (Three.js geometric avatar).
+               * It subscribes to the "tavus-avatar-agent" participant's video + audio tracks
+               * from the LiveKit room and renders them in a <video> element with synced lips.
+               * When Tavus is not configured, it shows a static portrait fallback.
+               */}
+              <TavusAvatarView
+                room={room}
+                state={state}
+                audioLevel={audioLevel}
+                avatarStatus={avatarStatus}
+                avatarError={avatarError}
+              />
 
               {/* Holographic state overlay badge */}
               <div className={`avatar-state-indicator state-${state}`}>
