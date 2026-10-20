@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import log from "loglevel";
-import { ConnectionState, RemoteAudioTrack, Room, RoomEvent, Track, setLogLevel } from "livekit-client";
+import { ConnectionState, Room, RoomEvent, Track, setLogLevel } from "livekit-client";
 import { fetchLiveKitToken, validateLiveKitCredentials } from "../services/livekitService";
 
 // Set LiveKit client log level to error to silence harmless background region settings warnings
@@ -33,21 +33,15 @@ export type AvatarState =
 
 export type LiveVoiceSource = { title: string; category: string };
 
-type LiveKitTokenResponse = {
-  token: string;
-  url: string;
-  room: string;
-  language: string;
-};
+export type TavusAvatarStatus = "disabled" | "connecting" | "connected" | "error";
 
 type VoiceDataEvent =
   | { type: "state"; state: AvatarState | "initializing" | "idle" }
   | { type: "transcript"; role: "user" | "assistant"; text: string; final: string }
-  | { type: "source"; title: string; category: string };
+  | { type: "source"; title: string; category: string }
+  | { type: "avatar"; status: "connected" | "disabled" | "unavailable"; identity?: string; conversation_id?: string; reason?: string };
 
 export type UseLiveVoiceSessionOptions = { language?: string };
-
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 export function useLiveVoiceSession({ language = "EN" }: UseLiveVoiceSessionOptions = {}) {
   const [state, setState] = useState<AvatarState>("idle");
@@ -57,6 +51,9 @@ export function useLiveVoiceSession({ language = "EN" }: UseLiveVoiceSessionOpti
   const [assistantTranscript, setAssistantTranscript] = useState("");
   const [sources, setSources] = useState<LiveVoiceSource[]>([]);
   const [audioLevel, setAudioLevel] = useState(0);
+  // Tavus avatar status — driven by "avatar" events published by the agent
+  const [avatarStatus, setAvatarStatus] = useState<TavusAvatarStatus>("connecting");
+  const [avatarError, setAvatarError] = useState<string | undefined>(undefined);
   const roomRef = useRef<Room | null>(null);
   const audioElementsRef = useRef<HTMLAudioElement[]>([]);
   const intentionalCloseRef = useRef(false);
@@ -70,6 +67,7 @@ export function useLiveVoiceSession({ language = "EN" }: UseLiveVoiceSessionOpti
     element: HTMLAudioElement;
     frame: number;
   } | null>(null);
+  const agentWaitTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const setAvatarState = useCallback((next: AvatarState) => {
     stateRef.current = next;
@@ -107,35 +105,31 @@ export function useLiveVoiceSession({ language = "EN" }: UseLiveVoiceSessionOpti
         // ignore disconnect failures during cleanup
       }
     }
+    if (agentWaitTimerRef.current) {
+      clearTimeout(agentWaitTimerRef.current);
+      agentWaitTimerRef.current = null;
+    }
     stopAudioMonitor();
     setAudioLevel(0);
   }, [stopAudioMonitor]);
 
-  const monitorAudio = useCallback((element: HTMLAudioElement, audioTrack?: RemoteAudioTrack) => {
+  const monitorAudio = useCallback((element: HTMLAudioElement) => {
     if (analyserRef.current) return;
     try {
       const AudioCtx =
         window.AudioContext ||
         (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      const context = new AudioCtx();
+      const context = new AudioCtx({ latencyHint: "interactive" });
       const analyser = context.createAnalyser();
-      // 512 gives ~43 Hz per bin at 22 050 Hz nyquist
-      analyser.fftSize = 512;
-      analyser.smoothingTimeConstant = 0.7; // built-in temporal smoothing from Web Audio API
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.55;
 
-      let source: MediaStreamAudioSourceNode | MediaElementAudioSourceNode;
-
-      // Prefer MediaStreamSource directly from WebRTC track to prevent double-speaker playback
-      // and bypass browser MediaElement silence issues.
-      if (audioTrack?.mediaStreamTrack) {
-        const stream = new MediaStream([audioTrack.mediaStreamTrack]);
-        source = context.createMediaStreamSource(stream);
-      } else {
-        source = context.createMediaElementSource(element);
-        analyser.connect(context.destination);
-      }
+      // Analyze the same element that is audible. A separate MediaStreamSource
+      // can report zero energy in some browsers even while the track is playing.
+      const source = context.createMediaElementSource(element);
 
       source.connect(analyser);
+      analyser.connect(context.destination);
       const binCount = analyser.frequencyBinCount; // 256
       const freqData = new Uint8Array(binCount);
 
@@ -220,8 +214,16 @@ export function useLiveVoiceSession({ language = "EN" }: UseLiveVoiceSessionOpti
           setErrorMessage((current) => (current?.includes("enable agent voice") ? null : current));
         }
       });
-      room.on(RoomEvent.TrackSubscribed, (track) => {
+      room.on(RoomEvent.TrackSubscribed, (track, _pub, participant) => {
         if (track.kind !== Track.Kind.Audio) return;
+        if (agentWaitTimerRef.current) {
+          clearTimeout(agentWaitTimerRef.current);
+          agentWaitTimerRef.current = null;
+        }
+        setErrorMessage((current) => (current?.includes("agent worker") ? null : current));
+        // Skip Tavus avatar audio — TavusAvatarView manages that track directly
+        // via its own ref to prevent duplicate audio playback.
+        if (participant.identity === "tavus-avatar-agent") return;
         // Avoid duplicate elements: detach any existing elements for this track first.
         track.detach().forEach((el) => {
           el.pause();
@@ -234,7 +236,7 @@ export function useLiveVoiceSession({ language = "EN" }: UseLiveVoiceSessionOpti
         element.setAttribute("aria-hidden", "true");
         document.body.appendChild(element);
         audioElementsRef.current.push(element);
-        monitorAudio(element, track as RemoteAudioTrack);
+        monitorAudio(element);
         void element.play().catch(() => {
           room.startAudio().catch(() => undefined);
         });
@@ -252,6 +254,20 @@ export function useLiveVoiceSession({ language = "EN" }: UseLiveVoiceSessionOpti
           audioElementsRef.current = audioElementsRef.current.filter((item) => item !== element);
         });
       });
+      room.on(RoomEvent.ParticipantConnected, () => {
+        if (agentWaitTimerRef.current) {
+          clearTimeout(agentWaitTimerRef.current);
+          agentWaitTimerRef.current = null;
+        }
+        setErrorMessage((current) => (current?.includes("agent worker") ? null : current));
+        setAvatarState("listening");
+        setStatusMessage("Alt connected! Listening... Speak naturally");
+      });
+      room.on(RoomEvent.ParticipantDisconnected, () => {
+        if (room.remoteParticipants.size === 0) {
+          setStatusMessage("Agent disconnected. Waiting for agent to reconnect...");
+        }
+      });
       room.on(RoomEvent.DataReceived, (payload, participant) => {
         if (!participant) return;
         try {
@@ -265,6 +281,18 @@ export function useLiveVoiceSession({ language = "EN" }: UseLiveVoiceSessionOpti
             setAssistantTranscript((current) => `${current} ${event.text}`.trim());
           } else if (event.type === "source") {
             setSources((current) => current.some((source) => source.title === event.title) ? current : [...current, event]);
+          } else if (event.type === "avatar") {
+            // Tavus avatar lifecycle events from the agent worker
+            if (event.status === "connected") {
+              setAvatarStatus("connected");
+              setAvatarError(undefined);
+            } else if (event.status === "disabled") {
+              setAvatarStatus("disabled");
+              setAvatarError(undefined);
+            } else if (event.status === "unavailable") {
+              setAvatarStatus("error");
+              setAvatarError(event.reason);
+            }
           }
         } catch {
           setErrorMessage("Received an invalid voice event from the agent.");
@@ -304,8 +332,22 @@ export function useLiveVoiceSession({ language = "EN" }: UseLiveVoiceSessionOpti
         autoGainControl: true,
       });
       setIsMuted(false);
-      setAvatarState("listening");
-      setStatusMessage("Listening... Speak naturally");
+
+      if (room.remoteParticipants.size > 0) {
+        setAvatarState("listening");
+        setStatusMessage("Listening... Speak naturally");
+      } else {
+        setAvatarState("connecting");
+        setStatusMessage("Connected to room. Waiting for Alt voice agent to join...");
+        agentWaitTimerRef.current = setTimeout(() => {
+          if (roomRef.current && roomRef.current.remoteParticipants.size === 0) {
+            setErrorMessage(
+              "Voice agent worker is not running. Start it in a second backend terminal: python livekit_agent.py dev"
+            );
+            setStatusMessage("Waiting for agent worker to start...");
+          }
+        }, 7000);
+      }
     } catch (error) {
       await cleanup();
       setAvatarState("error");
@@ -331,6 +373,8 @@ export function useLiveVoiceSession({ language = "EN" }: UseLiveVoiceSessionOpti
     setIsMuted(false);
     setAssistantTranscript("");
     setAvatarState("idle");
+    setAvatarStatus("connecting");
+    setAvatarError(undefined);
     setStatusMessage("Ready to connect");
   }, [cleanup, setAvatarState]);
 
@@ -371,6 +415,9 @@ export function useLiveVoiceSession({ language = "EN" }: UseLiveVoiceSessionOpti
     assistantTranscript,
     sources,
     audioLevel,
+    avatarStatus,
+    avatarError,
+    room: roomRef.current,
     startSession,
     endSession,
     toggleMute,
