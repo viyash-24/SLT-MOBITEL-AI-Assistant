@@ -64,7 +64,7 @@ export function useLiveVoiceSession({ language = "EN" }: UseLiveVoiceSessionOpti
     context: AudioContext;
     analyser: AnalyserNode;
     source: MediaStreamAudioSourceNode | MediaElementAudioSourceNode;
-    element: HTMLAudioElement;
+    element?: HTMLAudioElement;
     frame: number;
   } | null>(null);
   const agentWaitTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -78,8 +78,12 @@ export function useLiveVoiceSession({ language = "EN" }: UseLiveVoiceSessionOpti
     const monitor = analyserRef.current;
     if (!monitor) return;
     cancelAnimationFrame(monitor.frame);
-    monitor.source.disconnect();
-    monitor.analyser.disconnect();
+    try {
+      monitor.source.disconnect();
+    } catch {}
+    try {
+      monitor.analyser.disconnect();
+    } catch {}
     void monitor.context.close().catch(() => undefined);
     analyserRef.current = null;
   }, []);
@@ -113,38 +117,62 @@ export function useLiveVoiceSession({ language = "EN" }: UseLiveVoiceSessionOpti
     setAudioLevel(0);
   }, [stopAudioMonitor]);
 
-  const monitorAudio = useCallback((element: HTMLAudioElement) => {
+  const monitorAudio = useCallback((track?: Track, element?: HTMLAudioElement | null) => {
     if (analyserRef.current) return;
     try {
       const AudioCtx =
         window.AudioContext ||
         (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      if (!AudioCtx) return;
+
       const context = new AudioCtx({ latencyHint: "interactive" });
       const analyser = context.createAnalyser();
       analyser.fftSize = 256;
       analyser.smoothingTimeConstant = 0.55;
 
-      // Analyze the same element that is audible. A separate MediaStreamSource
-      // can report zero energy in some browsers even while the track is playing.
-      const source = context.createMediaElementSource(element);
+      let source: MediaStreamAudioSourceNode | MediaElementAudioSourceNode | null = null;
 
-      source.connect(analyser);
-      analyser.connect(context.destination);
-      const binCount = analyser.frequencyBinCount; // 256
+      // 1. Prefer MediaStreamTrack (official WebRTC path; does not hijack or mute element playback)
+      if (track?.mediaStreamTrack) {
+        try {
+          const stream = new MediaStream([track.mediaStreamTrack]);
+          source = context.createMediaStreamSource(stream);
+          source.connect(analyser);
+          // Do NOT connect to context.destination — audio is already played by the <audio> element!
+        } catch {
+          source = null;
+        }
+      }
+
+      // 2. Fallback to HTMLMediaElement source only if MediaStreamSource was unavailable
+      if (!source && element) {
+        try {
+          source = context.createMediaElementSource(element);
+          source.connect(analyser);
+          analyser.connect(context.destination);
+        } catch {
+          source = null;
+        }
+      }
+
+      if (!source) {
+        void context.close().catch(() => undefined);
+        return;
+      }
+
+      const binCount = analyser.frequencyBinCount; // 128
       const freqData = new Uint8Array(binCount);
 
-      // Determine speech-band bin range (~80 Hz – 3 500 Hz).
       const sampleRate = context.sampleRate || 48000;
       const hzPerBin = sampleRate / analyser.fftSize;
       const lowestBin = Math.max(1, Math.round(80 / hzPerBin));
       const highestBin = Math.min(binCount - 1, Math.round(3500 / hzPerBin));
-      const speechBinCount = highestBin - lowestBin + 1;
+      const speechBinCount = Math.max(1, highestBin - lowestBin + 1);
 
       let lastUiUpdate = 0;
       const sample = () => {
         analyser.getByteFrequencyData(freqData);
 
-        // Average energy over speech frequency band
         let sum = 0;
         for (let i = lowestBin; i <= highestBin; i++) {
           sum += freqData[i];
@@ -154,19 +182,28 @@ export function useLiveVoiceSession({ language = "EN" }: UseLiveVoiceSessionOpti
         const now = performance.now();
         if (now - lastUiUpdate >= 25) {
           lastUiUpdate = now;
-          // Blend: 55% previous + 45% new → responsive and smooth lip sync level
           setAudioLevel((current) => Math.min(1, current * 0.55 + avgEnergy * 3.0 * 0.45));
         }
         if (analyserRef.current) {
           analyserRef.current.frame = requestAnimationFrame(sample);
         }
       };
-      analyserRef.current = { context, analyser, source, element, frame: requestAnimationFrame(sample) };
+
+      analyserRef.current = {
+        context,
+        analyser,
+        source,
+        element: element ?? undefined,
+        frame: requestAnimationFrame(sample),
+      };
+
       if (context.state === "suspended") {
-        void context.resume();
+        void context.resume().catch(() => undefined);
       }
-    } catch {
-      setErrorMessage("Live audio analysis is unavailable; voice playback will continue without lip sync.");
+    } catch (err) {
+      // Audio analysis is purely for the visualizer and background aura.
+      // Never surface a fatal error message; voice playback continues normally.
+      console.debug("Audio analysis visualizer unavailable (playback unaffected):", err);
     }
   }, []);
 
@@ -221,9 +258,14 @@ export function useLiveVoiceSession({ language = "EN" }: UseLiveVoiceSessionOpti
           agentWaitTimerRef.current = null;
         }
         setErrorMessage((current) => (current?.includes("agent worker") ? null : current));
-        // Skip Tavus avatar audio — TavusAvatarView manages that track directly
-        // via its own ref to prevent duplicate audio playback.
-        if (participant.identity === "tavus-avatar-agent") return;
+
+        // When Tavus avatar audio arrives, TavusAvatarView attaches the element
+        // for audio playback. We connect the visualizer to the track's stream.
+        if (participant.identity === "tavus-avatar-agent") {
+          monitorAudio(track, null);
+          return;
+        }
+
         // Avoid duplicate elements: detach any existing elements for this track first.
         track.detach().forEach((el) => {
           el.pause();
@@ -236,18 +278,19 @@ export function useLiveVoiceSession({ language = "EN" }: UseLiveVoiceSessionOpti
         element.setAttribute("aria-hidden", "true");
         document.body.appendChild(element);
         audioElementsRef.current.push(element);
-        monitorAudio(element);
+        monitorAudio(track, element);
         void element.play().catch(() => {
           room.startAudio().catch(() => undefined);
         });
       });
-      room.on(RoomEvent.TrackUnsubscribed, (track) => {
+      room.on(RoomEvent.TrackUnsubscribed, (track, _pub, participant) => {
+        if (analyserRef.current) {
+          stopAudioMonitor();
+          setAudioLevel(0);
+        }
+        if (participant.identity === "tavus-avatar-agent") return;
         const detached = track.detach();
         detached.forEach((element) => {
-          if (analyserRef.current?.element === element) {
-            stopAudioMonitor();
-            setAudioLevel(0);
-          }
           element.pause();
           element.srcObject = null;
           element.remove();
@@ -391,6 +434,9 @@ export function useLiveVoiceSession({ language = "EN" }: UseLiveVoiceSessionOpti
       const room = roomRef.current;
       if (room && !room.canPlaybackAudio) {
         room.startAudio().catch(() => undefined);
+      }
+      if (analyserRef.current?.context.state === "suspended") {
+        void analyserRef.current.context.resume().catch(() => undefined);
       }
     };
     window.addEventListener("click", unlockAudio);
