@@ -54,6 +54,7 @@ export function useLiveVoiceSession({ language = "EN" }: UseLiveVoiceSessionOpti
   // Tavus avatar status — driven by "avatar" events published by the agent
   const [avatarStatus, setAvatarStatus] = useState<TavusAvatarStatus>("connecting");
   const [avatarError, setAvatarError] = useState<string | undefined>(undefined);
+  const [room, setRoom] = useState<Room | null>(null);
   const roomRef = useRef<Room | null>(null);
   const audioElementsRef = useRef<HTMLAudioElement[]>([]);
   const intentionalCloseRef = useRef(false);
@@ -91,6 +92,7 @@ export function useLiveVoiceSession({ language = "EN" }: UseLiveVoiceSessionOpti
   const cleanup = useCallback(async () => {
     const room = roomRef.current;
     roomRef.current = null;
+    setRoom(null);
     audioElementsRef.current.forEach((element) => {
       try {
         element.pause();
@@ -228,6 +230,7 @@ export function useLiveVoiceSession({ language = "EN" }: UseLiveVoiceSessionOpti
 
       const room = new Room({ adaptiveStream: true, dynacast: true });
       roomRef.current = room;
+      setRoom(room);
       room.on(RoomEvent.ConnectionStateChanged, (connectionState) => {
         if (connectionState === ConnectionState.Reconnecting) {
           setAvatarState("connecting");
@@ -365,6 +368,10 @@ export function useLiveVoiceSession({ language = "EN" }: UseLiveVoiceSessionOpti
       });
 
       await room.connect(livekitUrl, livekitToken);
+      // Request LiveKit's audio unlock while this start operation still
+      // originates from the user's gesture. This prevents a late Tavus audio
+      // track from starting in a rejected or repeatedly interrupted state.
+      await room.startAudio().catch(() => undefined);
       if (generation !== generationRef.current) {
         await room.disconnect().catch(() => undefined);
         return;
@@ -463,7 +470,7 @@ export function useLiveVoiceSession({ language = "EN" }: UseLiveVoiceSessionOpti
     audioLevel,
     avatarStatus,
     avatarError,
-    room: roomRef.current,
+    room,
     startSession,
     endSession,
     toggleMute,

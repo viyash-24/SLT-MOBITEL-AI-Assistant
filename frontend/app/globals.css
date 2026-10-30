@@ -681,6 +681,17 @@ code { background: var(--pale, #e1eaf4); border-radius: 4px; color: var(--blue);
 
 .soundwave-bar.speaking span {
   background: linear-gradient(to top, #059669, #34d399);
+  animation: speaking-bounce 0.8s infinite alternate ease-in-out;
+}
+.soundwave-bar.speaking span:nth-child(1) { animation-delay: 0.1s; }
+.soundwave-bar.speaking span:nth-child(2) { animation-delay: 0.25s; }
+.soundwave-bar.speaking span:nth-child(3) { animation-delay: 0.4s; }
+.soundwave-bar.speaking span:nth-child(4) { animation-delay: 0.15s; }
+.soundwave-bar.speaking span:nth-child(5) { animation-delay: 0.3s; }
+
+@keyframes speaking-bounce {
+  from { min-height: 10px; }
+  to { min-height: 26px; }
 }
 
 .soundwave-bar.thinking span {

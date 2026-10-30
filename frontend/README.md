@@ -5,9 +5,11 @@ Next.js frontend for the SLT-MOBITEL AI Assistant. The application provides text
 ## Features
 
 - Text chat with the SLT-MOBITEL AI Assistant backend.
-- Voice Agent using the browser Web Speech API.
-- Speech recognition and spoken responses in English, Sinhala, and Tamil when supported.
-- Live voice transcripts with start, stop, send, and cancel controls.
+- LiveKit voice agent with Gemini native-audio streaming.
+- Spoken responses and multilingual conversations in English, Sinhala, and Tamil.
+- Live voice transcripts and verified knowledge-base source events.
+- Realistic human video avatar powered by Tavus with lip-synchronized speech.
+- Seamless fallback to static representative portrait when avatar video is offline or unconfigured.
 - Persistent recent chat sessions using browser local storage.
 - Source and confidence information for assistant responses.
 - Responsive desktop and mobile layout.
@@ -18,7 +20,7 @@ Next.js frontend for the SLT-MOBITEL AI Assistant. The application provides text
 - Node.js 20 or newer is recommended.
 - npm or another compatible JavaScript package manager.
 - The backend API running locally or at a reachable URL.
-- A modern browser. Voice features require support for `SpeechRecognition` and `speechSynthesis`.
+- A modern browser with WebRTC and microphone support.
 
 ## Installation
 
@@ -63,15 +65,17 @@ Open [http://localhost:3000](http://localhost:3000) in a browser.
 
 ## Voice Agent
 
-The Voice Agent uses browser-native speech APIs and does not upload or store audio recordings.
+The Voice Agent uses LiveKit WebRTC media. The browser receives a short-lived room
+token from the backend, publishes microphone audio, and subscribes to the backend
+agent's Gemini native-audio response. LiveKit API credentials are never sent to the
+browser.
 
 1. Open the Voice Agent from the application.
 2. Select **Start Conversation** or **Voice Chat**.
 3. Allow microphone access when prompted.
-4. Speak your question.
-5. Stop listening or wait for recognition to finish.
-6. The recognized text is sent to the same `/api/chat` endpoint used by text chat.
-7. The assistant response is displayed and read aloud automatically.
+4. Speak your question naturally.
+5. The agent's audio response is streamed back through LiveKit.
+6. Use the mute or end controls to manage the session.
 
 | Language | Browser language code |
 | --- | --- |
@@ -79,7 +83,15 @@ The Voice Agent uses browser-native speech APIs and does not upload or store aud
 | Sinhala | `si-LK` |
 | Tamil | `ta-LK` |
 
-Voice availability depends on the browser, operating system, permissions, microphone, and installed system voices.
+Voice availability depends on browser WebRTC support, microphone permissions, the
+LiveKit deployment, Gemini model availability, and the running agent worker.
+
+The 3D avatar uses the same HTML audio element that plays the subscribed LiveKit
+track. An `AnalyserNode` measures RMS amplitude and drives a smoothed mouth-opening
+animation, so it does not create a second audio playback path. This is amplitude-
+based lip sync, not phoneme- or viseme-level synchronization. A future GLB avatar
+with morph targets can be added to the isolated `Live3DAvatar` component if
+viseme timing becomes available.
 
 ## Project Structure
 
@@ -118,7 +130,9 @@ Confirm that the backend is running on port `8000`, or set the correct URL in `.
 
 ### Voice chat is unavailable
 
-Check that the browser supports speech recognition and synthesis, microphone permission has been granted, a working microphone is connected, and the required Sinhala or Tamil system voice is installed.
+Check that the backend token endpoint is reachable, all `LIVEKIT_*` and
+`GOOGLE_API_KEY` settings are configured, the agent worker is running, and
+microphone permission has been granted.
 
 ### The backend returns a service-unavailable response
 

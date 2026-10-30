@@ -53,12 +53,23 @@ export function TavusAvatarView({
 }: TavusAvatarViewProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const audioTrackRef = useRef<Track | null>(null);
   const [videoReady, setVideoReady] = useState(false);
 
   // Subscribe to the Tavus participant's video and audio tracks when the room
   // is connected and the Tavus agent has joined.
   useEffect(() => {
     if (!room) return;
+    const audioElement = audioRef.current;
+
+    const playAudio = () => {
+      const audio = audioElement;
+      if (!audio) return;
+      void audio.play().catch(() => {
+        // Playback may still be locked until the browser receives a user gesture.
+        void room.startAudio().then(() => audio.play()).catch(() => undefined);
+      });
+    };
 
     const attachTavusTracks = () => {
       for (const [, participant] of room.remoteParticipants) {
@@ -70,9 +81,14 @@ export function TavusAvatarView({
             track.attach(videoRef.current);
             setVideoReady(true);
           }
-          if (track.kind === Track.Kind.Audio && audioRef.current) {
-            track.attach(audioRef.current);
-            audioRef.current.play().catch(() => undefined);
+          if (track.kind === Track.Kind.Audio && audioElement) {
+            if (audioTrackRef.current === track) continue;
+            if (audioTrackRef.current) {
+              audioTrackRef.current.detach(audioElement);
+            }
+            audioTrackRef.current = track;
+            track.attach(audioElement);
+            playAudio();
           }
         }
       }
@@ -88,9 +104,14 @@ export function TavusAvatarView({
         track.attach(videoRef.current);
         setVideoReady(true);
       }
-      if (track.kind === Track.Kind.Audio && audioRef.current) {
-        track.attach(audioRef.current);
-        audioRef.current.play().catch(() => undefined);
+      if (track.kind === Track.Kind.Audio && audioElement) {
+        if (audioTrackRef.current === track) return;
+        if (audioTrackRef.current) {
+          audioTrackRef.current.detach(audioElement);
+        }
+        audioTrackRef.current = track;
+        track.attach(audioElement);
+        playAudio();
       }
     };
 
@@ -103,6 +124,10 @@ export function TavusAvatarView({
       track.detach();
       if (track.kind === Track.Kind.Video) {
         setVideoReady(false);
+      } else if (audioTrackRef.current === track) {
+        audioTrackRef.current = null;
+        audioElement?.pause();
+        if (audioElement) audioElement.srcObject = null;
       }
     };
 
@@ -116,6 +141,10 @@ export function TavusAvatarView({
     return () => {
       room.off(RoomEvent.TrackSubscribed, handleTrackSubscribed);
       room.off(RoomEvent.TrackUnsubscribed, handleTrackUnsubscribed);
+      if (audioTrackRef.current && audioElement) {
+        audioTrackRef.current.detach(audioElement);
+      }
+      audioTrackRef.current = null;
     };
   }, [room]);
 
@@ -135,6 +164,7 @@ export function TavusAvatarView({
       <audio
         ref={audioRef}
         autoPlay
+        preload="auto"
         aria-hidden="true"
         data-tavus-audio="true"
         className="sr-only"
