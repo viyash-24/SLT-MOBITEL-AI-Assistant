@@ -55,6 +55,21 @@ python -m app.seed
 uvicorn main:app --reload
 ```
 
+7. For LiveKit voice sessions with the realistic Tavus human avatar, configure
+`LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, `LIVEKIT_ROOM`, and
+`TAVUS_API_KEY` (with optional `TAVUS_FACE_ID` and `TAVUS_PAL_ID`) in `backend/.env`.
+Then start the agent worker in a second backend terminal:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+python livekit_agent.py start
+```
+
+The voice agent integrates the official `livekit-plugins-tavus` `AvatarSession`:
+- When a user joins the room, the agent initiates an `AvatarSession` concurrently with the greeting.
+- The Tavus agent participant (`tavus-avatar-agent`) joins the room and publishes lip-synchronized video and audio tracks.
+- Spoken audio from Gemini Live is routed directly through Tavus data-stream audio output, eliminating lip-sync lag and double-audio playback.
+- If `TAVUS_API_KEY` is omitted or unavailable, the agent falls back to voice-only mode automatically without crashing.
 
 The API is available at `http://localhost:8000`. Open `/docs` for the interactive API documentation.
 
