@@ -16,6 +16,12 @@ class Settings(BaseSettings):
     livekit_url: str = ""
     livekit_room: str = "slt-mobitel-voice"
     gemini_live_model: str = "gemini-2.5-flash-native-audio-preview-12-2025"
+    # Tavus avatar configuration
+    # face_id: specific Tavus face/replica to use (leave blank for Tavus stock default)
+    # pal_id: Tavus PAL (persona configuration) to use (leave blank for Tavus stock default)
+    tavus_api_key: str = ""
+    tavus_face_id: str = ""
+    tavus_pal_id: str = ""
 
     model_config = SettingsConfigDict(
         env_file=Path(__file__).resolve().parent / ".env",
