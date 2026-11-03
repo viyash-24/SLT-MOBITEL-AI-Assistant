@@ -1,16 +1,13 @@
 from functools import lru_cache
 from pathlib import Path
-from uuid import uuid4
 
 from langchain_core.documents import Document
 from langchain_postgres import PGVector
 
-from chat import generate_answer
 from config import Settings, get_settings
-from database import database_ready, save_chat_exchange
+from database import database_ready
 from embeddings import create_embeddings
 from knowledge_base.ingest import ingest_knowledge_base, load_knowledge_documents
-from schemas import ChatRequest, ChatResponse, Source
 
 
 DATA_DIR = Path(__file__).resolve().parent / "knowledge_base" / "data"
@@ -142,27 +139,6 @@ class RagService:
 
         scored_documents.sort(key=lambda item: item[0], reverse=True)
         return [document for _, document in scored_documents[:k]]
-
-    def chat(self, request: ChatRequest) -> ChatResponse:
-        """Process chat request via the shared AssistantService."""
-        from app.dependencies import get_assistant_service
-        from app.domain.models.chat import AssistantRequest, ChatTurn
-
-        assistant = get_assistant_service()
-        domain_req = AssistantRequest(
-            message=request.message,
-            history=[ChatTurn(role=t.role, content=t.content) for t in request.history],
-            session_id=request.session_id,
-            channel="text",
-        )
-        result = assistant.answer(domain_req)
-        return ChatResponse(
-            session_id=result.session_id,
-            answer=result.answer,
-            sources=[Source(title=s.title, category=s.category) for s in result.sources],
-            confidence=result.confidence,
-        )
-
 
 @lru_cache
 def get_rag_service() -> RagService:
