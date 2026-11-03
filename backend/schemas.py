@@ -12,6 +12,7 @@ class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=4000)
     history: list[ChatTurn] = Field(default_factory=list, max_length=20)
     session_id: str | None = Field(default=None, max_length=120)
+    channel: Literal["text", "voice"] = "text"
 
 
 class Source(BaseModel):
