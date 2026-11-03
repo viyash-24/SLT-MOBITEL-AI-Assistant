@@ -1,0 +1,804 @@
+{
+  "source_file": "SLT Package details and New Connection Charges. V1.2.pdf",
+  "description": "SLT package rentals, allowances, voice plans and new-connection charges extracted from PDF tables. Amounts are LKR (Rs.) unless explicitly specified otherwise. Original tax qualifiers and limitations remain in the relevant fields.",
+  "page_count": 7,
+  "total_sections": 16,
+  "total_records": 79,
+  "sections": [
+    {
+      "section_id": "section_01",
+      "title": "FTTH Broadband packages (Fiber)",
+      "source_page": 1,
+      "source_table": 1,
+      "columns": {
+        "package": "Package",
+        "monthly_rental_rs": "Monthly Rental (Rs.)",
+        "data_volume_gb": "Data Volume (GB)",
+        "recurrence": "Recurrence",
+        "type": "Type"
+      },
+      "records": [
+        {
+          "package": "Fiber Starter (Anytime)",
+          "monthly_rental_rs": 2690,
+          "data_volume_gb": 80,
+          "recurrence": "Monthly",
+          "type": "Anytime",
+          "source_page": 1
+        },
+        {
+          "package": "Trio Vibe",
+          "monthly_rental_rs": 3530,
+          "data_volume_gb": 40,
+          "recurrence": "Monthly",
+          "type": "Bundled (Trio)",
+          "source_page": 1
+        },
+        {
+          "package": "Trio Vibe Plus",
+          "monthly_rental_rs": 4100,
+          "data_volume_gb": 40,
+          "recurrence": "Monthly",
+          "type": "Bundled (Trio)",
+          "inherited_from_merged_cell": [
+            "type"
+          ],
+          "source_page": 1
+        },
+        {
+          "package": "Trio Shine",
+          "monthly_rental_rs": 4950,
+          "data_volume_gb": 100,
+          "recurrence": "Monthly",
+          "type": "Bundled (Trio)",
+          "inherited_from_merged_cell": [
+            "type"
+          ],
+          "source_page": 1
+        },
+        {
+          "package": "Unlimited Home",
+          "monthly_rental_rs": 5900,
+          "data_volume_gb": "Unlimited",
+          "recurrence": "Monthly",
+          "type": "Unlimited",
+          "source_page": 1
+        },
+        {
+          "package": "Unlimited Home Plus",
+          "monthly_rental_rs": 9900,
+          "data_volume_gb": "Unlimited",
+          "recurrence": "Monthly",
+          "type": "Unlimited",
+          "inherited_from_merged_cell": [
+            "type"
+          ],
+          "source_page": 1
+        },
+        {
+          "package": "Unlimited Twin",
+          "monthly_rental_rs": 14900,
+          "data_volume_gb": "Unlimited",
+          "recurrence": "Monthly",
+          "type": "Unlimited",
+          "inherited_from_merged_cell": [
+            "type"
+          ],
+          "source_page": 1
+        },
+        {
+          "package": "Unlimited Pro",
+          "monthly_rental_rs": 19900,
+          "data_volume_gb": "Unlimited",
+          "recurrence": "Monthly",
+          "type": "Unlimited",
+          "inherited_from_merged_cell": [
+            "type"
+          ],
+          "source_page": 1
+        },
+        {
+          "package": "Unlimited Edge",
+          "monthly_rental_rs": 29900,
+          "data_volume_gb": "Unlimited",
+          "recurrence": "Monthly",
+          "type": "Unlimited",
+          "inherited_from_merged_cell": [
+            "type"
+          ],
+          "source_page": 1
+        },
+        {
+          "package": "Unlimited Turbo",
+          "monthly_rental_rs": 39900,
+          "data_volume_gb": "Unlimited",
+          "recurrence": "Monthly",
+          "type": "Unlimited",
+          "inherited_from_merged_cell": [
+            "type"
+          ],
+          "source_page": 1
+        },
+        {
+          "package": "Ultra Prime",
+          "monthly_rental_rs": 75000,
+          "data_volume_gb": 5000,
+          "recurrence": "Monthly",
+          "type": "(Ultra)1G",
+          "source_page": 1
+        },
+        {
+          "package": "Ultra Flash Prime",
+          "monthly_rental_rs": 75000,
+          "data_volume_gb": 200,
+          "recurrence": "Daily",
+          "type": "(Ultra)1G",
+          "inherited_from_merged_cell": [
+            "type"
+          ],
+          "source_page": 1
+        }
+      ]
+    },
+    {
+      "section_id": "section_02",
+      "title": "FTTH – PEO TV Packages (Fiber)",
+      "source_page": 1,
+      "source_table": 2,
+      "columns": {
+        "package_name": "Package Name",
+        "channels": "Channels",
+        "package_rental_rs": "Package Rentals (Rs.)"
+      },
+      "records": [
+        {
+          "package_name": "PEO HD PLUS",
+          "channels": null,
+          "package_rental_rs": 3125,
+          "source_page": 1
+        },
+        {
+          "package_name": "PEO ENTERTAINMENT",
+          "channels": 90,
+          "package_rental_rs": 1875,
+          "source_page": 1
+        },
+        {
+          "package_name": "PEO GOLD",
+          "channels": 94,
+          "package_rental_rs": 2100,
+          "source_page": 1
+        },
+        {
+          "package_name": "PEO PLATINUM",
+          "channels": 103,
+          "package_rental_rs": 2660,
+          "source_page": 1
+        },
+        {
+          "package_name": "PEO TITANIUM",
+          "channels": 116,
+          "package_rental_rs": 2940,
+          "source_page": 1
+        },
+        {
+          "package_name": "PEO FAMILY",
+          "channels": 86,
+          "package_rental_rs": 1625,
+          "source_page": 1
+        },
+        {
+          "package_name": "PEO SILVER PLUS",
+          "channels": 84,
+          "package_rental_rs": 1375,
+          "source_page": 1
+        }
+      ]
+    },
+    {
+      "section_id": "section_03",
+      "title": "Unlimited Voice Packages – FTTH (Fiber)",
+      "source_page": 2,
+      "source_table": 1,
+      "columns": {
+        "price_plan_name": "Price Plan Name",
+        "allowed_customer_subcategories": "Allowed Customer Subcategories",
+        "advantages": "Advantages"
+      },
+      "records": [
+        {
+          "price_plan_name": "Unltd Home My Phone 1st Line Rs.747",
+          "allowed_customer_subcategories": "Individual Residencies Government Official Residencies SLT Official Residencies Diplomats & Delegates",
+          "advantages": "Unlimited calls to any network Secure & Safe calling Clear, high-quality voice Postpaid package No dropped calls or connection issues No more usage charges No more worrying about running out of minutes Keep your existing number and phone No commitment period",
+          "source_page": 2
+        },
+        {
+          "price_plan_name": "Unltd Home My Phone 2nd Line Rs.747",
+          "allowed_customer_subcategories": "Individual Residencies Government Official Residencies SLT Official Residencies Diplomats & Delegates",
+          "advantages": "Unlimited calls to any network Secure & Safe calling Clear, high-quality voice Postpaid package No dropped calls or connection issues No more usage charges No more worrying about running out of minutes Keep your existing number and phone No commitment period",
+          "inherited_from_merged_cell": [
+            "advantages",
+            "allowed_customer_subcategories"
+          ],
+          "source_page": 2
+        },
+        {
+          "price_plan_name": "Voice Unltd Home SLT Phone 1st Line Rs.902",
+          "allowed_customer_subcategories": "Individual Residencies Government Official Residencies SLT Official Residencies Diplomats & Delegates",
+          "advantages": "Unlimited calls to any network Secure & Safe calling Clear, high-quality voice Postpaid package No dropped calls or connection issues No more usage charges No more worrying about running out of minutes Keep your existing number and phone No commitment period",
+          "inherited_from_merged_cell": [
+            "advantages"
+          ],
+          "source_page": 2
+        },
+        {
+          "price_plan_name": "Voice Unltd Home SLT Phone 2nd Line Rs.902",
+          "allowed_customer_subcategories": "Individual Residencies Government Official Residencies SLT Official Residencies Diplomats & Delegates",
+          "advantages": "Unlimited calls to any network Secure & Safe calling Clear, high-quality voice Postpaid package No dropped calls or connection issues No more usage charges No more worrying about running out of minutes Keep your existing number and phone No commitment period",
+          "inherited_from_merged_cell": [
+            "advantages",
+            "allowed_customer_subcategories"
+          ],
+          "source_page": 2
+        },
+        {
+          "price_plan_name": "Voice Unltd Office SLT Phone 1st Line Rs.902",
+          "allowed_customer_subcategories": "Individual Business Individual Micro Business Small Business Regional - SME Registered Micro Business",
+          "advantages": "Unlimited calls to any network Secure & Safe calling Clear, high-quality voice Postpaid package No dropped calls or connection issues No more usage charges No more worrying about running out of minutes Keep your existing number and phone No commitment period",
+          "inherited_from_merged_cell": [
+            "advantages"
+          ],
+          "source_page": 2
+        },
+        {
+          "price_plan_name": "Voice Unltd Office SLT Phone 2nd Line Rs.902",
+          "allowed_customer_subcategories": "Individual Business Individual Micro Business Small Business Regional - SME Registered Micro Business",
+          "advantages": "Unlimited calls to any network Secure & Safe calling Clear, high-quality voice Postpaid package No dropped calls or connection issues No more usage charges No more worrying about running out of minutes Keep your existing number and phone No commitment period",
+          "inherited_from_merged_cell": [
+            "advantages",
+            "allowed_customer_subcategories"
+          ],
+          "source_page": 2
+        }
+      ]
+    },
+    {
+      "section_id": "section_04",
+      "title": "LTE Postpaid Home Broadband Anytime Packages",
+      "source_page": 2,
+      "source_table": 2,
+      "columns": {
+        "package_name": "Package Name",
+        "rental_without_tax_rs": "Rental (Without Tax)",
+        "anytime_data_gb": "Anytime Data (GB)",
+        "midnight_thriller_availability": "Availability of Midnight Thriller"
+      },
+      "records": [
+        {
+          "package_name": "HBB Anytime 50GB",
+          "rental_without_tax_rs": 1290,
+          "anytime_data_gb": 50,
+          "midnight_thriller_availability": "Yes (Midnight to 7am Free Unlimited Data)",
+          "source_page": 2
+        },
+        {
+          "package_name": "HBB Anytime 85GB",
+          "rental_without_tax_rs": 1890,
+          "anytime_data_gb": 85,
+          "midnight_thriller_availability": "Yes (Midnight to 7am Free Unlimited Data)",
+          "inherited_from_merged_cell": [
+            "midnight_thriller_availability"
+          ],
+          "source_page": 2
+        },
+        {
+          "package_name": "HBB Anytime 115GB",
+          "rental_without_tax_rs": 2590,
+          "anytime_data_gb": 115,
+          "midnight_thriller_availability": "Yes (Midnight to 7am Free Unlimited Data)",
+          "inherited_from_merged_cell": [
+            "midnight_thriller_availability"
+          ],
+          "source_page": 2
+        },
+        {
+          "package_name": "HBB Anytime 200GB",
+          "rental_without_tax_rs": 3990,
+          "anytime_data_gb": 200,
+          "midnight_thriller_availability": "Yes (Midnight to 7am Free Unlimited Data)",
+          "inherited_from_merged_cell": [
+            "midnight_thriller_availability"
+          ],
+          "source_page": 2
+        },
+        {
+          "package_name": "HBB Anytime 400GB",
+          "rental_without_tax_rs": 7990,
+          "anytime_data_gb": 400,
+          "midnight_thriller_availability": "Yes (Midnight to 7am Free Unlimited Data)",
+          "inherited_from_merged_cell": [
+            "midnight_thriller_availability"
+          ],
+          "source_page": 2
+        }
+      ]
+    },
+    {
+      "section_id": "section_05",
+      "title": "LTE Unlimited Packages - Postpaid",
+      "source_page": 3,
+      "source_table": 1,
+      "columns": {
+        "package_name": "Package Name",
+        "maximum_bandwidth": "Maximum Bandwidth",
+        "monthly_rental_rs": "Monthly Rental (Rs)",
+        "data_offering": "Data Offering"
+      },
+      "records": [
+        {
+          "package_name": "LTE Unlimited 2",
+          "maximum_bandwidth": "2 Mbps",
+          "monthly_rental_rs": 2950,
+          "data_offering": "Unlimited",
+          "source_page": 3
+        },
+        {
+          "package_name": "LTE Unlimited 4",
+          "maximum_bandwidth": "4 Mbps",
+          "monthly_rental_rs": 5150,
+          "data_offering": "Unlimited",
+          "source_page": 3
+        },
+        {
+          "package_name": "LTE Unlimited 8",
+          "maximum_bandwidth": "8 Mbps",
+          "monthly_rental_rs": 7090,
+          "data_offering": "Unlimited",
+          "source_page": 3
+        },
+        {
+          "package_name": "Unlimited LTE Flash 5",
+          "maximum_bandwidth": "Daily First 5GB at normal LTE speed, afterwards throttling to 1 Mbps FREE UNLIMITED INTERNET at normal speed, every day from 12 midnight - 7am",
+          "monthly_rental_rs": 2350,
+          "data_offering": "Daily First 5GB at normal LTE speed, afterwards throttling to 1 Mbps FREE UNLIMITED INTERNET at normal speed, every day from 12 midnight - 7am",
+          "source_page": 3
+        },
+        {
+          "package_name": "Unlimited LTE Flash 10",
+          "maximum_bandwidth": "Daily First 10GB at normal LTE speed, afterwards throttling to 1 Mbps FREE UNLIMITED INTERNET at normal speed every day from 12 midnight - 7am",
+          "monthly_rental_rs": 4090,
+          "data_offering": "Daily First 10GB at normal LTE speed, afterwards throttling to 1 Mbps FREE UNLIMITED INTERNET at normal speed, every day from 12 midnight - 7am",
+          "source_page": 3
+        }
+      ]
+    },
+    {
+      "section_id": "section_06",
+      "title": "4G LTE Prepaid – Main Packages",
+      "source_page": 3,
+      "source_table": 2,
+      "columns": {
+        "package_name": "Package Name",
+        "recurrence": "Recurrence",
+        "data_volume_gb": "Data Volume (GB)",
+        "validity_days": "Validity (Days)",
+        "price_with_tax_rs": "Price (Rs) With Tax"
+      },
+      "records": [
+        {
+          "package_name": "4G LTE - Home Broadband - 30 Days",
+          "recurrence": "Onetime",
+          "data_volume_gb": 20,
+          "validity_days": 30,
+          "price_with_tax_rs": 535,
+          "source_page": 3
+        },
+        {
+          "package_name": "HBB Anytime - 899 (30 days)",
+          "recurrence": "Onetime",
+          "data_volume_gb": 35,
+          "validity_days": 30,
+          "price_with_tax_rs": 899,
+          "source_page": 3
+        },
+        {
+          "package_name": "HBB Anytime - 1899 (30 days)",
+          "recurrence": "Onetime",
+          "data_volume_gb": 75,
+          "validity_days": 30,
+          "price_with_tax_rs": 1899,
+          "source_page": 3
+        }
+      ]
+    },
+    {
+      "section_id": "section_07",
+      "title": "PEOTV 4G LTE",
+      "source_page": 3,
+      "source_table": 3,
+      "columns": {
+        "cost_for_stb": "COST FOR STB",
+        "package_name": "PACKAGE NAME",
+        "monthly_rental": "MONTHLY RENTAL"
+      },
+      "records": [
+        {
+          "cost_for_stb": "Rs. 11,990/- (Including Taxes)",
+          "package_name": "PEO 4G ELITE",
+          "monthly_rental": "Rs. 790/- + (Taxes)",
+          "source_page": 3
+        }
+      ]
+    },
+    {
+      "section_id": "section_08",
+      "title": "General Packages - ADSL",
+      "source_page": 4,
+      "source_table": 1,
+      "columns": {
+        "package_name": "Package Name",
+        "rental_without_tax_rs": "Rental (Without Tax)",
+        "data_gb": "Data (GB)",
+        "midnight_thriller_availability": "Availability of Midnight Thriller"
+      },
+      "records": [
+        {
+          "package_name": "Any Beat",
+          "rental_without_tax_rs": 1150,
+          "data_gb": 36,
+          "midnight_thriller_availability": "Yes (Midnight to 7am Free Unlimited Data)",
+          "source_page": 4
+        },
+        {
+          "package_name": "Any Flix",
+          "rental_without_tax_rs": 2150,
+          "data_gb": 53,
+          "midnight_thriller_availability": "Yes (Midnight to 7am Free Unlimited Data)",
+          "inherited_from_merged_cell": [
+            "midnight_thriller_availability"
+          ],
+          "source_page": 4
+        },
+        {
+          "package_name": "Any Tide",
+          "rental_without_tax_rs": 3890,
+          "data_gb": 100,
+          "midnight_thriller_availability": "Yes (Midnight to 7am Free Unlimited Data)",
+          "inherited_from_merged_cell": [
+            "midnight_thriller_availability"
+          ],
+          "source_page": 4
+        },
+        {
+          "package_name": "Unlimited 4Mbps",
+          "rental_without_tax_rs": 5790,
+          "data_gb": "Unlimited",
+          "midnight_thriller_availability": "No",
+          "source_page": 4
+        },
+        {
+          "package_name": "Unlimited 8Mbps",
+          "rental_without_tax_rs": 7490,
+          "data_gb": "Unlimited",
+          "midnight_thriller_availability": "No",
+          "inherited_from_merged_cell": [
+            "midnight_thriller_availability"
+          ],
+          "source_page": 4
+        }
+      ]
+    },
+    {
+      "section_id": "section_09",
+      "title": "Megaline - PEO TV packages",
+      "source_page": 4,
+      "source_table": 2,
+      "columns": {
+        "package_name": "Package Name",
+        "channels": "Channels",
+        "package_rental_rs": "Package Rentals (Rs.)"
+      },
+      "records": [
+        {
+          "package_name": "PEO ENTERTAINMENT",
+          "channels": 90,
+          "package_rental_rs": 1875,
+          "source_page": 4
+        },
+        {
+          "package_name": "PEO GOLD",
+          "channels": 94,
+          "package_rental_rs": 2100,
+          "source_page": 4
+        },
+        {
+          "package_name": "PEO PLATINUM",
+          "channels": 103,
+          "package_rental_rs": 2660,
+          "source_page": 4
+        },
+        {
+          "package_name": "PEO TITANIUM",
+          "channels": 116,
+          "package_rental_rs": 2940,
+          "source_page": 4
+        },
+        {
+          "package_name": "PEO FAMILY",
+          "channels": 86,
+          "package_rental_rs": 1625,
+          "source_page": 4
+        },
+        {
+          "package_name": "PEO SILVER PLUS",
+          "channels": 84,
+          "package_rental_rs": 1375,
+          "source_page": 4
+        }
+      ]
+    },
+    {
+      "section_id": "section_10",
+      "title": "Monthly rentals of voice packages - ADSL",
+      "source_page": 4,
+      "source_table": 3,
+      "columns": {
+        "customer_category": "Customer Category",
+        "monthly_rental_rs": "Monthly Rental (Rs)",
+        "free_minute_offers": "Free minute Offers",
+        "free_value_added_service_offers": "Free Value-Added Services Offers"
+      },
+      "records": [
+        {
+          "customer_category": "Residential Renamed as \"Home Single Play (SLT Phone)\"",
+          "monthly_rental_rs": 520,
+          "free_minute_offers": "100 On-net minutes",
+          "free_value_added_service_offers": "Free CLI",
+          "source_page": 4
+        },
+        {
+          "customer_category": "Business",
+          "monthly_rental_rs": 749,
+          "free_minute_offers": null,
+          "free_value_added_service_offers": "Free CLI, Free Call Forwarding, Free Call waiting, Free Conferencing (Three parties)",
+          "source_page": 4
+        },
+        {
+          "customer_category": "Religious",
+          "monthly_rental_rs": 210,
+          "free_minute_offers": "100 On-net minutes",
+          "free_value_added_service_offers": "Free CLI",
+          "source_page": 4
+        },
+        {
+          "customer_category": "Home Single Play My Phone",
+          "monthly_rental_rs": 400,
+          "free_minute_offers": null,
+          "free_value_added_service_offers": null,
+          "source_page": 4
+        }
+      ]
+    },
+    {
+      "section_id": "section_11",
+      "title": "SLT Fibre - New Connections",
+      "source_page": 5,
+      "source_table": 1,
+      "columns": {
+        "service_type": "Service Type",
+        "new_connection_charge_rs": "New Connection Charge (Rs)"
+      },
+      "records": [
+        {
+          "service_type": "Double Play (BB or PEO TV) & Triple Play",
+          "new_connection_charge_rs": 12500,
+          "source_page": 5
+        },
+        {
+          "service_type": "Fiber New connection through online portal {Double Play (BB or PEO TV) & Triple Play}",
+          "new_connection_charge_rs": 10000,
+          "conditions": "Need to settle the payment online before providing the service. The customer has to upload the necessary documents through the new connection portal. Customer money will be refunded within one month if the new connection cannot be delivered to the customer. Click on the below link to register online; https://myslt.slt.lk/applyonline/fiber",
+          "source_page": 5
+        }
+      ]
+    },
+    {
+      "section_id": "section_12",
+      "title": "4G LTE – New Connections – Postpaid",
+      "source_page": 5,
+      "source_table": 2,
+      "columns": {
+        "package": "Package",
+        "new_connection_charge_rs": "New Connection Charge (Rs)",
+        "available_facilities": "Available Facilities"
+      },
+      "records": [
+        {
+          "package": "Double Play (BB+ Voice)",
+          "new_connection_charge_rs": 6469.64,
+          "available_facilities": "Detail Bill/Tele Life/ E- Channeling/Railway Ticketing",
+          "source_page": 5
+        },
+        {
+          "package": "Single Play (BB only)",
+          "new_connection_charge_rs": 6469.64,
+          "available_facilities": "No",
+          "source_page": 5
+        },
+        {
+          "package": "Single Play (Voice only) \"4G Voice Pal\"",
+          "new_connection_charge_rs": 6469.64,
+          "available_facilities": "Detail Bill/Tele Life/ E- Channeling/Railway Ticketing/Sisu Connect",
+          "source_page": 5
+        },
+        {
+          "package": "Single Play (Voice only) - \"4G Biz Pal\"",
+          "new_connection_charge_rs": 6469.64,
+          "available_facilities": null,
+          "source_page": 5
+        },
+        {
+          "package": "CDMA to LTE Voice Service",
+          "new_connection_charge_rs": "Free migrations from CDMA (Not for new connections)",
+          "available_facilities": "Tele Life/ E- Channeling/Railway Ticketing/Sisu Connect",
+          "source_page": 5
+        },
+        {
+          "package": "4G Net Pal (BB+ Voice)",
+          "new_connection_charge_rs": 6469.64,
+          "available_facilities": "Double play VAS bundle - Rs. 50 Triple play VAS bundle - Rs. 100",
+          "source_page": 5
+        }
+      ]
+    },
+    {
+      "section_id": "section_13",
+      "title": "4G LTE – New Connections – Postpaid (continued)",
+      "source_page": 6,
+      "source_table": 1,
+      "columns": {
+        "package": "Package",
+        "new_connection_charge_rs": "New Connection Charge (Rs)",
+        "available_facilities": "Available Facilities"
+      },
+      "records": [
+        {
+          "package": "Pre-owned CPE (Single Play)",
+          "new_connection_charge_rs": 3230.77,
+          "available_facilities": "Lifetime warranty for the CPE Only CAT 4 type of CPE will be provided One-year commitment period Early Termination fee of Rs 3500 is applicable",
+          "source_page": 6
+        },
+        {
+          "package": "Pre-owned CPE (Double Play)",
+          "new_connection_charge_rs": 3230.77,
+          "available_facilities": "Lifetime warranty for the CPE Only CAT 4 type of CPE will be provided One-year commitment period Early Termination fee of Rs 3500 is applicable",
+          "source_page": 6
+        },
+        {
+          "package": "With VoLTE (Voice) - Double Play or voice only",
+          "new_connection_charge_rs": 9708.5,
+          "available_facilities": "Lifetime warranty for the CPE No commitment period (No early termination fee) Additional Data of 15GB per month for the first 12 months will be provided (Not applicable for Unlimited BB packages)",
+          "source_page": 6
+        },
+        {
+          "package": "Without VoLTE (Voice) - BB only",
+          "new_connection_charge_rs": 8898.79,
+          "available_facilities": null,
+          "source_page": 6
+        },
+        {
+          "package": "4G LTE Postpaid (SIM only)",
+          "new_connection_charge_rs": 1000,
+          "available_facilities": "SLT provide the connection Customer should purchase his/her preferred router (If customer is Interested, can purchase a handy pocket router from SLTMobitel Teleshops and e-Teleshop with a discount) No Commitment periods No early termination fees",
+          "source_page": 6
+        }
+      ]
+    },
+    {
+      "section_id": "section_14",
+      "title": "4G LTE Prepaid New Connections",
+      "source_page": 7,
+      "source_table": 1,
+      "columns": {
+        "new_connection_type": "New Connection Type",
+        "charges_without_taxes_rs": "Charges (Rs) (Without taxes)"
+      },
+      "records": [
+        {
+          "new_connection_type": "New CPE",
+          "charges_without_taxes_rs": 6469.64,
+          "source_page": 7
+        },
+        {
+          "new_connection_type": "Refurbished CPE",
+          "charges_without_taxes_rs": 4850.2,
+          "source_page": 7
+        }
+      ]
+    },
+    {
+      "section_id": "section_15",
+      "title": "Megaline - New Connections",
+      "source_page": 7,
+      "source_table": 2,
+      "columns": {
+        "package": "Package",
+        "services_offered": "Services Offered",
+        "connection_fee_without_tax_rs": "Connection fee Rs. (Without tax)"
+      },
+      "records": [
+        {
+          "package": "Single Play",
+          "services_offered": "Telephone",
+          "connection_fee_without_tax_rs": 12500,
+          "source_page": 7
+        },
+        {
+          "package": "Double Play",
+          "services_offered": "Telephone + BB (Without Router)",
+          "connection_fee_without_tax_rs": 12500,
+          "source_page": 7
+        },
+        {
+          "package": "Double Play",
+          "services_offered": "Telephone + PEO TV (Free Router and STB)",
+          "connection_fee_without_tax_rs": 15000,
+          "inherited_from_merged_cell": [
+            "package"
+          ],
+          "source_page": 7
+        },
+        {
+          "package": "Triple Play",
+          "services_offered": "Telephone +Broadband+PEO TV (Free Router and STB)",
+          "connection_fee_without_tax_rs": 15000,
+          "source_page": 7
+        },
+        {
+          "package": "Megaline Single Play Freedom",
+          "services_offered": "Telephone + Free 2GB Data bundle (Without Router)",
+          "connection_fee_without_tax_rs": 12500,
+          "source_page": 7
+        },
+        {
+          "package": "Megaline Double Play (PV) Freedom",
+          "services_offered": "Telephone +PEO TV (Free Router and STB) + Free 2GB Data bundle",
+          "connection_fee_without_tax_rs": 15000,
+          "source_page": 7
+        }
+      ]
+    },
+    {
+      "section_id": "section_16",
+      "title": "My Phone Package - Megaline (Customer owned Equipment)",
+      "source_page": 7,
+      "source_table": 3,
+      "columns": {
+        "package": "Package",
+        "new_connection_charge_rs": "New Connection Charge (Rs)"
+      },
+      "records": [
+        {
+          "package": "Single Play with My Phone",
+          "new_connection_charge_rs": 12500,
+          "source_page": 7
+        },
+        {
+          "package": "Double Play BB with My Phone",
+          "new_connection_charge_rs": 12500,
+          "source_page": 7
+        },
+        {
+          "package": "Double Play PEO TV with My Phone",
+          "new_connection_charge_rs": 15000,
+          "source_page": 7
+        },
+        {
+          "package": "Triple Play with My Phone",
+          "new_connection_charge_rs": 15000,
+          "source_page": 7
+        }
+      ]
+    }
+  ]
+}
