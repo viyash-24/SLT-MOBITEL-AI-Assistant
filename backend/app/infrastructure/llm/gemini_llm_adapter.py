@@ -13,18 +13,13 @@ logger = logging.getLogger(__name__)
 
 
 class GeminiLLMAdapter:
-    """LLMPort implementation backed by LangChain ChatGoogleGenerativeAI.
-
-    Delegates to the existing `generate_answer()` function so that all the
-    retry / safety-filter / empty-response handling stays in one place.
-    """
+    """LLMPort implementation backed by LangChain ChatGoogleGenerativeAI."""
 
     def __init__(self, settings) -> None:
-        # Lazy import keeps the domain/application layers import-free of LangChain.
         from config import Settings  # noqa: PLC0415
         self._settings: Settings = settings
 
-    def generate(self, context: str, history: str, message: str) -> str:
+    def generate(self, context: str, history: str, message: str, channel: str = "text") -> str:
         """Generate an answer and return it as a plain string.
 
         Raises:
@@ -35,7 +30,7 @@ class GeminiLLMAdapter:
             raise ConfigurationError("GOOGLE_API_KEY is not configured.")
         try:
             from chat import generate_answer  # noqa: PLC0415
-            return generate_answer(self._settings, context, history, message)
+            return generate_answer(self._settings, context, history, message, channel=channel)
         except ConfigurationError:
             raise
         except RuntimeError as exc:
