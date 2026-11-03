@@ -1,6 +1,6 @@
 import type { ChatMessageData, ChatSource } from "../types/chat";
 
-type ApiChatResponse = {
+export type ApiChatResponse = {
 	session_id: string;
 	answer: string;
 	sources: ChatSource[];
@@ -9,7 +9,12 @@ type ApiChatResponse = {
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
-export async function sendChatMessage(message: string, history: ChatMessageData[], sessionId: string): Promise<ApiChatResponse> {
+export async function sendChatMessage(
+	message: string,
+	history: ChatMessageData[],
+	sessionId: string,
+	channel: "text" | "voice" = "text",
+): Promise<ApiChatResponse> {
 	let response: Response;
 	try {
 		response = await fetch(`${apiUrl}/api/chat`, {
@@ -19,6 +24,7 @@ export async function sendChatMessage(message: string, history: ChatMessageData[
 				message,
 				session_id: sessionId,
 				history: history.map(({ role, content }) => ({ role, content })),
+				channel,
 			}),
 		});
 	} catch {
