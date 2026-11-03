@@ -17,6 +17,7 @@ class LLMPort(Protocol):
         context: str,
         history: str,
         message: str,
+        channel: str = "text",
     ) -> str:
         """Return the LLM-generated answer string.
 
