@@ -14,8 +14,3 @@ export type ChatSource = {
 	title: string;
 	category: string;
 };
-
-export type Suggestion = {
-	label: string;
-	icon: "map" | "plane" | "card" | "headset";
-};
