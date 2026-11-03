@@ -7,21 +7,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     google_api_key: str = ""
     database_url: str = ""
-    cors_origins: str = "http://localhost:3000"
-    gemini_model: str = "gemini-2.5-flash"
+    cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
+    gemini_model: str = "gemini-2.5-flash-lite"
+    gemini_live_model: str = "gemini-2.5-flash-native-audio-latest"
     gemini_embedding_model: str = "models/gemini-embedding-001"
     pgvector_collection: str = "slt_mobitel_knowledge"
-    livekit_api_key: str = ""
-    livekit_api_secret: str = ""
-    livekit_url: str = ""
-    livekit_room: str = "slt-mobitel-voice"
-    gemini_live_model: str = "gemini-2.5-flash-native-audio-preview-12-2025"
-    # Tavus avatar configuration
-    # face_id: specific Tavus face/replica to use (leave blank for Tavus stock default)
-    # pal_id: Tavus PAL (persona configuration) to use (leave blank for Tavus stock default)
-    tavus_api_key: str = ""
-    tavus_face_id: str = ""
-    tavus_pal_id: str = ""
 
     model_config = SettingsConfigDict(
         env_file=Path(__file__).resolve().parent / ".env",
