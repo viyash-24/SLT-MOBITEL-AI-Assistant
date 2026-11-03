@@ -20,7 +20,7 @@ def _to_domain_request(api_req: ChatRequest) -> AssistantRequest:
         message=api_req.message,
         history=[ChatTurn(role=t.role, content=t.content) for t in api_req.history],
         session_id=api_req.session_id,
-        channel="text",
+        channel=api_req.channel,
     )
 
 
