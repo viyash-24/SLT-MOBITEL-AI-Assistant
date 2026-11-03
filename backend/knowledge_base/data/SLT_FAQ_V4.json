@@ -1,0 +1,655 @@
+{
+  "source_file": "FAQ.V4.xlsx",
+  "description": "SLT-MOBITEL knowledge-base frequently asked questions, preserving original English and Sinhala responses.",
+  "total_faqs": 46,
+  "languages": [
+    "en",
+    "si"
+  ],
+  "faqs": [
+    {
+      "id": "faq_001",
+      "tag": "Billing",
+      "category": "Billing FAQs",
+      "question": "Can I change my bill delivery method?",
+      "responses": {
+        "en": "Yes. You can choose from the different models we offer.\n~ You can change between one bill mode to another bill mode via MySLT App/ Portal > Bill > Bill Methods, https://myslt.slt.lk/\n~ To change from other methods to Hard Copy (Connect to Live Agent)",
+        "si": "ඔව්. අපි පිරිනමන විවිධ මාදිලි වලින් ඔබට තෝරා ගත හැකිය. \n~ MySLT App/Portal > Bill > Bill Methods, https://myslt.slt.lk/ භාවිතා කර ඔබට එක් Bill ක්‍රමයකින් වෙනත් Bill ක්‍රමයකට මාරු විය හැකිය.\n~ වෙනත් Bill ක්‍රමයකින් Hard Copy ක්‍රමයට මාරු වීමට Live Agent කෙනෙකු සමඟ සම්බන්ධ වන්න."
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 4
+      }
+    },
+    {
+      "id": "faq_002",
+      "tag": "Billing",
+      "category": "Billing FAQs",
+      "question": "How can I pay a bill online?",
+      "responses": {
+        "en": "• You can use the pay online option on MySLT App/Portal (https://myslt.slt.lk/).\n• You can also pay online using our web based portal via https://pay.slt.lk/web/\n• You can also pay online using our webslte (https://www.sltmobitel.lk/)",
+        "si": "• ඔබට MySLT App/Portal (https://myslt.slt.lk/) හි ඔන්ලයින් ගෙවීම් විකල්පය භාවිතා කළ හැක.\n• ඔබට https://pay.slt.lk/web/ හරහා අපගේ වෙබ් විකල්පයද භාවිතා කර ඔන්ලයින් ගෙවිය හැකිය.\n• ඔබට අපගේ වෙබ් අඩවිය භාවිතා කර ඔන්ලයින් ගෙවීම් කළ හැකිය (https://www.sltmobitel.lk/)\n"
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 5
+      }
+    },
+    {
+      "id": "faq_003",
+      "tag": null,
+      "category": "Billing FAQs",
+      "question": "How can I pay my bill?",
+      "responses": {
+        "en": "• You can use the pay online option on MySLT App/Portal (https://myslt.slt.lk/).\n• You can also pay online using our web based portal via https://pay.slt.lk/web/\n• You can also pay online using our webslte (https://www.sltmobitel.lk/)\n\nYou can also pay your bill by visiting the following locations:\n1. SLTMobitel outlets\n2. Banks (Online apps/Visits)\n3. Supermarkets\n4. Payment Dealer outlets (etc..)",
+        "si": "• ඔබට MySLT App/Portal (https://myslt.slt.lk/) හි ඔන්ලයින් ගෙවීම් විකල්පය භාවිතා කළ හැක.\n• ඔබට https://pay.slt.lk/web/ හරහා අපගේ වෙබ් විකල්පයද භාවිතා කර ඔන්ලයින් ගෙවිය හැකිය.\n• ඔබට අපගේ වෙබ් අඩවිය භාවිතා කර ඔන්ලයින් ගෙවීම් කළ හැකිය (https://www.sltmobitel.lk/)\n\nඑසේම ඔබට පහත ස්ථාන වෙත පැමිණ ඔබගේ බිල්පත ගෙවිය හැකිය:\n1. SLTMobitel ශාඛා\n2. බැංකු (Online Apps / බැංකුවට පැමිණ)\n3. සුපිරි වෙළඳසැල්\n4. Payment Dealer ශාඛා (ආදිය)"
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 6
+      }
+    },
+    {
+      "id": "faq_004",
+      "tag": "Billing",
+      "category": "Billing FAQs",
+      "question": "How do I find out the current bill balance?",
+      "responses": {
+        "en": "• You can access your bill summary information on the home screen of the MySLT App/Portal (https://myslt.slt.lk/).\n• Send an SMS to 1212, type: SSS<space>BILL<space>10 Digit Telephone number",
+        "si": "• ඔබට MySLT App/Portal (https://myslt.slt.lk/) හි මුල් තිරය මත ඔබේ බිල්පත් සාරාංශ තොරතුරු වෙත ප්‍රවේශ විය හැක.\n• SSS<හිස්තැනක්>BILL<හිස්තැනක්>ඉලක්කම් 10  දුරකථන අංකය ටයිප් කර 1212 ට කෙටි පණිවුඩයක් යවන්න"
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 7
+      }
+    },
+    {
+      "id": "faq_005",
+      "tag": "Billing",
+      "category": "Billing FAQs",
+      "question": "How do I obtain a detailed report of an SLT-Mobitel Fixed line bill?",
+      "responses": {
+        "en": "• Collect the application from the nearest SLT-MOBITEL branch, fill it and handover.\n• Charges will apply depending on the requested Detailed Bill category (Past Outgoing, Past Incoming, or Future Outgoing) and the selected bill format (Hard Copy / Soft Copy).",
+        "si": "• ළඟම ඇති SLT-MOBITEL ශාඛාවෙන් අයදුම්පත්‍රය එකතු කර එය පුරවා භාර දෙන්න.\n• අය කරන ගාස්තු, ඉල්ලා ඇති Detailed Bill වර්ගය (Past Outgoing / Past Incoming / Future Outgoing) සහ තෝරාගත් Bill Format එක (Hard Copy / Soft Copy) අනුව වෙනස් වේ."
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 8
+      }
+    },
+    {
+      "id": "faq_006",
+      "tag": "Billing",
+      "category": "Billing FAQs",
+      "question": "How do I receive the bill via Email?",
+      "responses": {
+        "en": "• You can receive monthly bills through email by Registering to our e-Bill facility\n• To register, just select the e-Bill tab on the main menu of the MySLT App/Portal (https://myslt.slt.lk/)",
+        "si": "• අපගේ විද්‍යුත් බිල්පත් පහසුකම වෙත ලියාපදිංචි වීමෙන් ඔබට විද්‍යුත් තැපෑල හරහා මාසික බිල්පත් ලබා ගත හැක\n• ලියාපදිංචි වීමට, MySLT App/Portal (https://myslt.slt.lk/) හි ප්‍රධාන මෙනුවේ ඇති e-Bill ටැබ් එක තෝරන්න."
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 9
+      }
+    },
+    {
+      "id": "faq_007",
+      "tag": "Billing",
+      "category": "Billing FAQs",
+      "question": "How do I report a complaint regarding an SLT-Mobitel Fixed line bill?\nCan I make a complaint regarding my bill? (Bill Complaint)",
+      "responses": {
+        "en": "Talk to live agent option",
+        "si": null
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 10
+      }
+    },
+    {
+      "id": "faq_008",
+      "tag": "Billing",
+      "category": "Billing FAQs",
+      "question": "What are the ways that I can get my bill ?\nWhat are the availble billing methods?",
+      "responses": {
+        "en": "You can get your bill via below methods;\n1. By Email (eBill) - Register via MySLT App/Portal https://myslt.slt.lk/ or visit https://ebill.slt.lk/\n2. Via MySLT App/Portal https://myslt.slt.lk/\n3. By Post\n4. By SMS - type SSS<space>BILL<space>Telephone number send to 1212",
+        "si": "පහත ක්‍රම මගින් ඔබට ඔබේ බිල්පත ලබා ගත හැක;\n1. විද්‍යුත් තැපෑලෙන් (eBill) - MySLT App/Portal https://myslt.slt.lk/ හරහා හෝ https://ebill.slt.lk/ වෙත පිවිසෙන්න\n2. MySLT App/Portal හරහා https://myslt.slt.lk/\n3. තැපැල් මගින්\n4. SMS මගින් - SSS<හිස්තැනක්>BILL<හිස්තැනක්>දුරකථන අංකය ටයිප් කර 1212 ට එවන්න"
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 11
+      }
+    },
+    {
+      "id": "faq_009",
+      "tag": "Billing",
+      "category": "Billing FAQs",
+      "question": "What is my bill period?",
+      "responses": {
+        "en": "Your bill will be calculated for the amount of days in a particular month (30days, 31 days…etc) and sent to you after. There are 4 options to choose the bill start date,\nOption #1 : ​​​​8th of the month\nOption #2 : ​​​16th of the month\nOption #3 : ​​​24th of the month\nOption #4 : ​1st of the month",
+        "si": "ඔබේ බිල්පත යම් මාසයක දින ගණන (දින 30, දින 31... යනාදී) සඳහා ගණනය කර පසුව ඔබට එවනු ලැබේ. බිල්පත් ආරම්භක දිනය තේරීමට විකල්ප 4ක් ඇත,\nවිකල්ප #1 : මාසයේ 8 වෙනිදා\nවිකල්ප #2 : මාසයේ 16 වෙනිදා\nවිකල්ප #3 : මාසයේ 24\nවිකල්ප #4 : මාසයේ 1 වෙනිදා"
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 12
+      }
+    },
+    {
+      "id": "faq_010",
+      "tag": "General Inquiries",
+      "category": "General FAQs",
+      "question": "How can I get an SLTMobitel Fixed service?",
+      "responses": {
+        "en": "There are 3 options for you to choose\n• SLT Fibre - Via Fiber Optical cable\n• SLT 4G LTE - Via Wireless 4G signals\n• SLT Megaline - Via Copper wire\nYou can request a new service through by visiting https://myslt.slt.lk/promo/buyonline or through the MySLT App/Portal (https://myslt.slt.lk/)",
+        "si": "ඔබට තෝරා ගැනීමට විකල්ප 3ක් ඇත\n• SLT Fibre - Via Fiber Optical cable\n• SLT 4G LTE - රැහැන් රහිත 4G සංඥා හරහා\n• SLT මෙගාලයින් - තඹ වයර් හරහා\nඔබට https://myslt.slt.lk/promo/buyonline වෙත පිවිසීමෙන් හෝ MySLT App/Portal (https://myslt.slt.lk/) හරහා නව සේවාවක් ඉල්ලුම් කල හැක"
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 13
+      }
+    },
+    {
+      "id": "faq_011",
+      "tag": "General Inquiries",
+      "category": "General FAQs",
+      "question": "How can I get my connection shifted within premises or to another location?\nWhat's the process for relocating my connection within premises or to a different location?",
+      "responses": {
+        "en": "Please provide a written request with legal owner's signature to your nearest SLT-MOBITEL Office ",
+        "si": "කරුණාකර ඔබගේ ළඟම ඇති SLT-MOBITEL කාර්යාලයට ලිඛිත ඉල්ලීමක් සපයන්න"
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 14
+      }
+    },
+    {
+      "id": "faq_012",
+      "tag": "General Inquiries",
+      "category": "General FAQs",
+      "question": "How do I register to the MySLT App/Portal?",
+      "responses": {
+        "en": "Go to https://myslt.slt.lk in your web browser or download the App via Google Playstore, Apple store..etc \n\n~ Sign in using Google ID/Facebook ID OR Click Sign-up. \nFill the details as;\nUser ID : Mobile number or email address, Password : Enter any password, Name–Enter your full name, Tick the Terms and conditions, Click Sign up\n\nEnter OTP received to mobile or email.\n\n~ If you have an SLT Connection already, click on \"Join\" - Select telephone, Enter SLT Telephone /4G username, Enter SLT Account number, Enter NIC # of owner, Click Submit\n~ You can add up to 4 residential accounts. You can view bill balance, data balance, add extra GB, Get add-ons (for zoom, Teams etc.) and much more.\n~ Users of previously discontinued SLT Broadband App or portal can register by choosing the Broadband tab (BB user name and previous VAS password used for Broadband portal or App)\n\nFor more info visit: https://www.slt.lk/sites/default/files/downloads/general_downloads/MySLT%20App-English.pdf",
+        "si": "ඔබගේ වෙබ් බ්‍රවුසරයේ https://myslt.slt.lk වෙත යන්න හෝ Google Playstore, Apple store.. හරහා ඇප් එක බාගන්න.\n\n~ Google ID/Facebook ID භාවිතයෙන් පුරනය වන්න හෝ ලියාපදිංචි වන්න ක්ලික් කරන්න.\nවිස්තර ලෙස පුරවන්න;\nපරිශීලක හැඳුනුම්පත: ජංගම දුරකථන අංකය හෝ ඊමේල් ලිපිනය, මුරපදය: ඕනෑම මුරපදයක් ඇතුළත් කරන්න, නම - ඔබේ සම්පූර්ණ නම ඇතුළත් කරන්න, නියමයන් සහ කොන්දේසි ටික් කරන්න, ලියාපදිංචි වන්න ක්ලික් කරන්න\n\nජංගම දුරකථනයට හෝ විද්‍යුත් තැපෑලට ලැබුණු OTP ඇතුළත් කරන්න.\n\n~ ඔබට දැනටමත් SLT සම්බන්ධතාවයක් තිබේ නම්, \"Join\" මත ක්ලික් කරන්න - \"Telephone\" තෝරන්න, SLT දුරකථන # /4G පරිශීලක නාමය ඇතුළත් කරන්න, SLT ගිණුම් අංකය ඇතුළත් කරන්න, හිමිකරුගේ NIC # ඇතුළත් කරන්න, ඉදිරිපත් කරන්න ක්ලික් කරන්න.\n~ ඔබට නේවාසික ගිණුම් 4ක් දක්වා එකතු කළ හැක. ඔබට බිල් ශේෂය, දත්ත ශේෂය, අමතර GB එකතු කිරීම, ඇඩෝන ලබා ගැනීම (විශාලනය, කණ්ඩායම් ආදිය සඳහා) සහ තවත් බොහෝ දේ බැලිය හැක.\n~ පෙර නවතා දැමූ SLT බ්‍රෝඩ්බෑන්ඩ් යෙදුම හෝ ද්වාරය භාවිතා කරන්නන්ට බ්‍රෝඩ්බෑන්ඩ් ටැබ් (BB පරිශීලක නාමය සහ බ්‍රෝඩ්බෑන්ඩ් ද්වාරය හෝ යෙදුම සඳහා භාවිතා කළ පෙර VAS මුරපදය) තේරීමෙන් ලියාපදිංචි විය හැක.\n\nවැඩි විස්තර සඳහා පිවිසෙන්න:\nhttps://www.slt.lk/sites/default/files/downloads/general_downloads/MySLTApp-Sinhala-v2.pdf"
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 15
+      }
+    },
+    {
+      "id": "faq_013",
+      "tag": "General Inquiries",
+      "category": "General FAQs",
+      "question": "How to access my SLT email account?",
+      "responses": {
+        "en": "Provide your email Username and Password  in https://mail.sltnet.lk/hpronto/ to login to your SLT e-mail account.",
+        "si": "ඔබගේ SLT විද්‍යුත් තැපැල් ගිණුමට පුරනය වීමට https://mail.sltnet.lk/hpronto/ හි ඔබගේ ඊමේල් පරිශීලක නාමය සහ මුරපදය ලබා දෙන්න."
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 16
+      }
+    },
+    {
+      "id": "faq_014",
+      "tag": "General Inquiries",
+      "category": "General FAQs",
+      "question": "I want to Change the ownership of my connection\nHow can I change the ownership of my connection?",
+      "responses": {
+        "en": "• Ownership transfer application signed by old and new owner\n• Copy of NIC of the new owner\n• The new owner has to personally visit RTO/Teleshop\n• If the previous owner is dead, the new custodian should bring the death certificate together with documents to claim ownership\n• If the wife is requesting - The marriage certificate to prove\n• If the children are requesting - The birth certificate and letters from the mother/other children granting consent\n• If an outsider is requesting - justification together with an Indemnity Bond Form (can be taken from RTO/Teleshop)\n\n​",
+        "si": "• පැරණි හිමිකරු සහ නව හිමිකරු විසින් අත්සන් කරන ලද Ownership Transfer අයදුම්පත\n• නව හිමිකරුගේ ජාතික හැඳුනුම්පතේ පිටපතක්\n• නව හිමිකරු පෞද්ගලිකව RTO/Teleshop වෙත පැමිණිය යුතුය\n• පෙර හිමිකරු මියගොස් ඇත්නම්, නව භාරකරු විසින් මරණ සහතිකය සහ හිමිකම ඉල්ලා සිටීමට අදාල ලේඛන ඉදිරිපත් කළ යුතුය\n• බිරිඳ විසින් ඉල්ලීම කරන්නේ නම්, විවාහ සහතිකය අවශ්‍ය වේ\n• දරුවන් විසින් ඉල්ලීම කරන්නේ නම්, උප්පැන්න සහතිකය සහ මව/අනෙකුත් දරුවන්ගේ එකඟතා ලිපි අවශ්‍ය වේ\n• බාහිර පුද්ගලයෙකු විසින් ඉල්ලීම කරන්නේ නම්, සාධාරණ කිරීමේ ලිපියක් සහ Indemnity Bond Form එකක් (RTO/Teleshop වෙතින් ලබාගත හැක) අවශ්‍ය වේ"
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 17
+      }
+    },
+    {
+      "id": "faq_015",
+      "tag": "Product Information & New Connection",
+      "category": "General FAQs",
+      "question": "I want to purchase a new device/router/phone intrument..etc",
+      "responses": {
+        "en": "~ You can also visit any of our offices Island wide. Use this link; https://www.slt.lk/en/contact-us/branch-locator/our-locations/our-network, to find your closest SLT office",
+        "si": "~ ඔබට දිවයින පුරා පිහිටි අපගේ ඕනෑම කාර්යාලයකට පිවිසිය හැක.\nඔබේ ළඟම ඇති SLT කාර්යාලය සොයා ගැනීමට මෙම සබැඳිය භාවිතා කරන්න; https://www.slt.lk/en/contact-us/branch-locator/our-locations/our-network"
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 18
+      }
+    },
+    {
+      "id": "faq_016",
+      "tag": "Product Information & New Connection",
+      "category": "Products Info FAQs",
+      "question": "What is 4G-LTE?",
+      "responses": {
+        "en": "In telecommunication, Long-Term Evolution (LTE) is a standard for wireless broadband communication for mobile devices and data terminals, based on the GSM/EDGE and UMTS/HSPA technologies. It increases the capacity and speed using a different radio interface together with core network improvements.\n",
+        "si": "විදුලි සංදේශයේදී, GSM/EDGE සහ UMTS/HSPA තාක්ෂණයන් මත පදනම්ව ජංගම උපාංග සහ දත්ත පර්යන්ත සඳහා රැහැන් රහිත බ්‍රෝඩ්බෑන්ඩ් සන්නිවේදනය සඳහා දිගුකාලීන පරිණාමය (LTE) ප්‍රමිතියකි. එය මූලික ජාල වැඩිදියුණු කිරීම් සමඟ විවිධ රේඩියෝ අතුරු මුහුණතක් භාවිතා කරමින් ධාරිතාව සහ වේගය වැඩි කරයි.\n\n"
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 19
+      }
+    },
+    {
+      "id": "faq_017",
+      "tag": "Product Information & New Connection",
+      "category": "Products Info FAQs",
+      "question": "What is Broadband/ADSL?",
+      "responses": {
+        "en": "Asymmetric digital subscriber line (ADSL) is a type of digital subscriber line (DSL) technology, a data communications technology that enables faster data transmission over copper telephone lines than a conventional voiceband modem can provide.\n\n",
+        "si": "අසමමිතික ඩිජිටල් ග්‍රාහක රේඛාව (ADSL) යනු ඩිජිටල් ග්‍රාහක රේඛා (DSL) තාක්‍ෂණයේ වර්ගයකි, සම්ප්‍රදායික වොයිස්බෑන්ඩ් මොඩමයකට වඩා තඹ දුරකථන මාර්ග හරහා වේගවත් දත්ත සම්ප්‍රේෂණය සක්‍රීය කරන දත්ත සන්නිවේදන තාක්‍ෂණයකි.\n\n"
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 20
+      }
+    },
+    {
+      "id": "faq_018",
+      "tag": "Service Information (Internet)",
+      "category": "Internet BB FAQs",
+      "question": "How can I change my existing package?\nPackage transfer/ Package upgrade",
+      "responses": {
+        "en": "~ You can use the MySLT web portal (https://myslt.slt.lk/) or MySLT App to upgrade your package.\n~ Package transfer fee: free of charge for upgrades and Rs.250/= for downgrades.\nFor more information (live agent option)",
+        "si": "~ ඔබගේ පැකේජය උත්ශ්‍රේණි කිරීම සඳහා ඔබට MySLT වෙබ් ද්වාරය (https://myslt.slt.lk/) හෝ MySLT යෙදුම භාවිතා කළ හැක.\n~ පැකේජ හුවමාරු ගාස්තුව: වැඩිදියුණු කිරීම් සඳහා නොමිලේ සහ පහත් කිරීම් සඳහා රු.250/=.\nවැඩි විස්තර සඳහා (සජීවී නියෝජිත සහාය)"
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 21
+      }
+    },
+    {
+      "id": "faq_019",
+      "tag": "Service Information (Internet)",
+      "category": "Internet BB FAQs",
+      "question": "How can I get details of my Data Usage?",
+      "responses": {
+        "en": "You can enable detailed usage reports via the MySLT App/Portal (https://myslt.slt.lk/)\n~ MySLT App-> Internet -> Select data remaining -> More -> Enable Detailed Reports\n~ MySLT Web Portal (https://myslt.slt.lk/) -> Broadband -> More -> Enable Detailed Report \nCharge per 1 month Rs.100/=\nCharge per Annum (12 Months) Rs.1000/=",
+        "si": "ඔබට MySLT App/Portal (https://myslt.slt.lk/) හරහා සවිස්තරාත්මක භාවිත වාර්තා සක්‍රීය කළ හැක.\n~ MySLT යෙදුම-> අන්තර්ජාලය -> ඉතිරි දත්ත තෝරන්න -> තවත් -> විස්තරාත්මක වාර්තා සක්‍රීය කරන්න\n~ MySLT වෙබ් ද්වාරය (https://myslt.slt.lk/) -> බ්‍රෝඩ්බෑන්ඩ් -> තවත් -> සවිස්තර වාර්තාව සක්‍රීය කරන්න\nමාස 1කට අයකිරීම රු.100/=\nවාර්ෂික ගාස්තුව (මාස 12) රු. 1000/="
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 22
+      }
+    },
+    {
+      "id": "faq_020",
+      "tag": "Service Information (Internet)",
+      "category": "Internet BB FAQs",
+      "question": "How can I improve my  Wifi coverage?",
+      "responses": {
+        "en": "Your Wi-Fi signals could get weak due to the capacity of your router, distance from the router etc..\nBest ways to mitigate this matter would be;\n1. Upgrade your router\n2. Use a Wi-Fi extender \n3. Use a Wi-Fi mesh..etc\n",
+        "si": "ඔබගේ රවුටරයේ ධාරිතාව, රවුටරයෙන් ඇති දුර ආදිය හේතුවෙන් ඔබගේ Wi-Fi සංඥා දුර්වල විය හැක.\nමෙම කාරණය අවම කිරීම සඳහා හොඳම ක්‍රම වනුයේ;\n1. ඔබේ රවුටරය වෙනස් කරන්න\n2. Wi-Fi විස්තාරකයක් (Extender) භාවිතා කරන්න\n3. Wi-Fi මෙෂ්(Mesh) එකක් භාවිතා කරන්න.. etc\n"
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 23
+      }
+    },
+    {
+      "id": "faq_021",
+      "tag": "Service Information (Internet)",
+      "category": "Internet BB FAQs",
+      "question": "How will DATA be allocated in an SLT internet package?",
+      "responses": {
+        "en": "The allocated data will differ according to the package that you choose.\nIf;\nUnlimited; No limitation in Data Volume (Except for Unlimited \"Flash\" Packages, which have a daily limit and bandwith speed is controlled when exceeded.) (*Unlimited Free internet from 12midnight to 7am for only Unlimited Flash Packages)\n\nAnytime (Volume Based); Has a monthly data limit, no daily time band. *Unlimited Free internet from 12midnight to 7am\n\nTime Based; Has a monthly data limit, divided to 2 daily time bands. (Standard time : 8am-12midnight / Free time : 7am- 8am) *Unlimited Free internet from 12midnight to 7am\nAnytime Upload volume and Download volume during Off Peak hours ( 07:00h to 08:00h )\n\nYou can find Internet package details by visiting the links below;\n\nPostpaid: https://www.slt.lk/en/broadband/packages\n\nPrepaid: (Only for 4G)\\nhttps://www.slt.lk/en/broadband/Prepaid-packages",
+        "si": "\"ඔබ තෝරා ගන්නා පැකේජය අනුව වෙන් කළ දත්ත වෙනස් වේ.\nනම්;\nඅසීමිත (Unlimited); දත්ත පරිමාවෙහි සීමාවක් නොමැත (දිනපතා සීමාවක් ඇති අසීමිත \\\"ෆ්ලෑෂ්\\\" පැකේජ හැර, ඉක්මවූ විට කලාප සහිත වේගය පාලනය වේ.) *අසීමිත නොමිලේ (Unlimited Free) internet මධ්‍යම රාත්‍රී 12 සිට පෙ.ව. 7 තෙක් Unlimited Flash පැකේජ සඳහා පමණක්\n\nඕනෑම වේලාවක (Anytime) (පරිමාව පදනම් කරගත්); මාසික දත්ත සීමාවක් ඇත, දෛනික කාල පරාසයක් නොමැත. *අසීමිත නොමිලේ (Unlimited Free) internet මධ්‍යම රාත්‍රී 12 සිට පෙ.ව. 7 තෙක්\n\nකාලය පදනම් කරගත් (Time Based); මාසික දත්ත සීමාවක් ඇත, දෛනික කාල පරාසයන් 2 කට බෙදා ඇත.(සම්මත වේලාව : පෙ.ව. 8-මධ්‍යම රාත්‍රී 12 තෙක් / නිදහස් වේලාව: පෙ.ව. 7 - පෙ.ව. 8 තෙක්) *අසීමිත නොමිලේ (Unlimited Free) internet මධ්‍යම රාත්‍රී 12 සිට පෙ.ව. 7 තෙක්\nඕනෑම වේලාවක upload කිරීමේ සහ download කිරීමේ volume එක \n07:00 සිට 08:00 දක්වා  කාලය තුල සිදුවේ.\n\nපහත සබැඳි වෙත පිවිසීමෙන් ඔබට අන්තර්ජාල පැකේජ විස්තර සොයා ගත හැක;\nපසුගෙවුම්: https://www.slt.lk/en/broadband/packages\n\nපෙරගෙවුම්: (4G සඳහා පමණි)\nhttps://www.slt.lk/en/broadband/Prepaid-packages"
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 24
+      }
+    },
+    {
+      "id": "faq_022",
+      "tag": "Service Information (Internet)",
+      "category": "Internet BB FAQs",
+      "question": "My connection speeds are slow. What is the reason?",
+      "responses": {
+        "en": "1. Allocated quota for the present time band has finished.\n (Check your data allocation via MySLT web portal (https://myslt.slt.lk/) / App \n\n2. Too many devices connected to one router (Access Point).\nToo many devices using the same access point/router can reduce speed received by each device\n\n3. Computer or Device is performing low\nIf the PC or device that is connected to the router network is performing low, then the same performance will affect when browsing or using the internet.\n\n4. Low Wi-Fi signals or out of range\nIf a connected device is showing less Wi-Fi signal bars (Mostly one) or says out of range, then it could be that you are too far away from the access point (Router). \n\n5. WAN (Connection from ISP-SLT to the Router) is slow\nDownload and upload speeds can vary from time to time (Depending on data traffic, line conditions, connected devices...etc). These speeds can be checked by using a third Party speed test site such as https://www.speedtest.net/ or https://speedtest.xfinity.com\n\nYou can create a complaint via the MySLT App/Portal (https://myslt.slt.lk/)",
+        "si": "1. වත්මන් කාල පරාසය සඳහා වෙන් කළ කෝටාව අවසන් වීම.\nMySLT App/Portal  (https://myslt.slt.lk/)  හරහා ඔබේ ඩේටා ශේෂය පරීක්ෂා කරන්න. \n\n2. එක් රවුටරයකට සම්බන්ධ උපකරණ ප්‍රමාණය වැඩි වීම.\n\n3. පරිගණකය හෝ භාවිතා කරන උපකරණයේ ක්‍රියාකාරිත්වය අඩු වීම.\nරවුටර ජාලයට සම්බන්ධ වී ඇති පරිගණකය හෝ උපාංගයේ අඩු ක්‍රියාකාරිත්වයක් පෙන්නුම් කරන්නේ නම්, අන්තර්ජාලය භාවිතා කිරීමේදීද එය බලපානු ඇත.\n\n4. අඩු WI-FI සංඥා හෝ පරාසයෙන් පිට සිටීම.\nසම්බන්ධ කර ඇති උපකරණයේ අඩු WI-FI සිග්නල්  පෙන්වන්නේ නම් ,ඔබ රවුටරය ප්‍රවේශ ස්ථානයෙන් බොහෝ දුරින් සිටීම නිසා විය හැකිය.\n\n5. WAN (ISP-SLT-MOBITEL සිට Router වෙත සම්බන්ධතාවය) සම්බන්ධතාවයේ වේගය අඩු වීම\nබාගත කිරීමේ (Download) සහ උඩුගත කිරීමේ (Upload) වේගය කලින් කලට වෙනස් විය හැක (දත්ත ගමනාගමනය,  කේබලයේ තත්ත්වයන්, සම්බන්ධිත උපාංග... යනාදී මත පදනම්ව). ඔබට https://www.speedtest.net/ හෝ https://speedtest.xfinity.com/ වැනි තෙවන පාර්ශවීක වෙබ් අඩවියකින් අන්තර්ජාල වේගය පරික්ෂා කල හැක\n\nමෙම වේගය වෙනදාට වඩා අඩු නම් ඔබට MySLT App/Portal (https://myslt.slt.lk/) හරහා දෝෂය වාර්තා කරන්න."
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 25
+      }
+    },
+    {
+      "id": "faq_023",
+      "tag": "Service Information (Internet)",
+      "category": "Internet BB FAQs",
+      "question": "What are the Bandwidth speeds offered in SLT-Mobitel Fixed Internet connections?",
+      "responses": {
+        "en": "Connection speed of Unlimited, Time-based and  Anytime Packages;\n\nSLT Fiber;\n- Maximum download speed 1000Mbps \n - Maximum upload Speed 500Mbps\n\n 4G LTE;\n- Maximum download speed  100Mbps    \n -Maximum upload speed 10Mbps\n\nBroadband (Megaline);\n- Maximum upload speed up to Web Pal is 512Kbps, all above gets 1Mbps\n- Maximum download speed on all packages are 21Mbps (depends on line condition)",
+        "si": "Unlimited, Time-based සහ Anytime පැකේජ වල සම්බන්ධතා වේගය;\n\nSLT ෆයිබර්;\n- උපරිම බාගත වේගය 1000Mbps \n- උපරිම උඩුගත කිරීමේ වේගය 500Mbps පමණ වේ\n\n4G LTE;\n-  උපරිම බාගත කිරීමේ වේගය 100Mbps\n-  උපරිම උඩුගත කිරීමේ වේගය 10Mbps පමණ වේ\n\nBroadband (මෙගාලයින්);\n- වෙබ් පැල් දක්වා උපරිම උඩුගත කිරීමේ වේගය 512Kbps වේ, ඉහත සියල්ලට 1Mbps ලැබේ\n- සියලු පැකේජවල උපරිම බාගත කිරීමේ වේගය 21Mbps වේ (රේඛා තත්ත්වය මත රඳා පවතී)"
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 26
+      }
+    },
+    {
+      "id": "faq_024",
+      "tag": "Service Information (Internet)",
+      "category": "Internet BB FAQs",
+      "question": "What are the ways to obtain an SLTMobitel Fixed Internet facility?",
+      "responses": {
+        "en": "Fibre - for high speed high quality internet\n4G LTE (Post paid/Pre paid) - For limited mobility and easy installation\n\nTo register, visit https://myslt.slt.lk/promo/buyonline",
+        "si": "ෆයිබර් - අධිවේගී උසස් තත්ත්වයේ අන්තර්ජාලය සඳහා\n4G LTE (පසු ගෙවූ/පෙර ගෙවුම්) - සීමිත සංචලනය සහ පහසු ස්ථාපනය සඳහා\n\nනව සම්බන්ධතාවයක් ඉල්ලා සිටීමට https://myslt.slt.lk/promo/buyonline  පිටුවට පිවිසෙන්න"
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 27
+      }
+    },
+    {
+      "id": "faq_025",
+      "tag": "Service Information (Internet)",
+      "category": "Internet BB FAQs",
+      "question": "What is the price of an SLT-Mobitel Fixed Internet service?",
+      "responses": {
+        "en": "~ There is a onetime charge for the installation, and a recurring monthly charge\n~ Refer https://www.slt.lk/en/personal/telephone for Installation charges\n~ Monthly charges may vary as per the additional subscribed services",
+        "si": "~ ස්ථාපන කටයුතු සඳහා මූලික ගාස්තු සහ මාසික ගාස්තු අදාළ වේ\n~ ස්ථාපන ගාස්තු සඳහා https://www.slt.lk/en/personal/telephone බලන්න\n~ අමතර දායක වූ සේවාවන් අනුව මාසික ගාස්තු වෙනස් වේ"
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 28
+      }
+    },
+    {
+      "id": "faq_026",
+      "tag": "Service Information (PEO TV)",
+      "category": "PEO TV FAQs",
+      "question": "What Features do I get from a PEO TV connection?",
+      "responses": {
+        "en": "PEOTV brings the latest Local & Global news & Entertainment from around the world at a click of a button. Its interactivity will amaze you & will make you want PEOTV around you almost all the time to guide & help you in providing high quality personalized entertainment to suite your taste.\n\n~ Past Program view ability of up to 48hours\n~ Live program Rewinding, Pausing, Fast forwarding ability\n~ Large Database of Popular Movies, Music and Educational Content\n ~ TV Guide\n~ Parental Control/Channel Blocking ability\n~ Program Reminder setting\n~ Picture in Picture facility; to view two channels at the same time and many other facilities. visit https://www.slt.lk/index.php/en/personal/peo-tv/peo-feature for more info",
+        "si": "PEO TV බොත්තමක් ක්ලික් කිරීමකින් ලොව පුරා නවතම දේශීය සහ ගෝලීය ප්‍රවෘත්ති සහ විනෝදාස්වාදය ගෙන එයි. එහි අන්තර්ක්‍රියාකාරීත්වය ඔබව මවිතයට පත් කරවන අතර ඔබට උසස් තත්ත්වයේ පුද්ගලීකරණයක් සැපයීමට ඔබට මඟ පෙන්වීමට සහ උපකාර කිරීමට සෑම විටම පාහේ PEO ඔබට අවශ්‍ය වනු ඇත. ඔබේ රුචිකත්වයට ගැලපෙන විනෝදාස්වාදය.\n\n~ පසුගිය වැඩසටහන් නැරඹීමේ හැකියාව පැය 48ක් දක්වා\n~ සජීවී වැඩසටහන Rewinding, Pausing, Fast forwarding හැකියාව\n~ ජනප්‍රිය චිත්‍රපට, සංගීතය සහ අධ්‍යාපනික අන්තර්ගතයේ විශාල දත්ත සමුදාය\n~ රූපවාහිනී මාර්ගෝපදේශය\n~ Parental Control / චැනල් අවහිර(Block) කිරීමේ හැකියාව\n~ වැඩසටහන් මතක් කිරීමේ(Reminder) සැකසුම\n~ Picture in Picture පහසුකම; නාලිකා දෙකක් එකවර නැරඹීමට සහ තවත් බොහෝ පහසුකම්. වැඩි විස්තර සඳහා https://www.peotv.com/home වෙත පිවිසෙන්න"
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 29
+      }
+    },
+    {
+      "id": "faq_027",
+      "tag": "Troubleshooting (Internet)",
+      "category": "Internet BB Troubleshoot FAQs",
+      "question": "Browsing/Internet slow",
+      "responses": {
+        "en": "1. Check usage to see if quota is exceeded ; via the MySLT App/Portal (https://myslt.slt.lk/) \n2. Restart router\n3. Change Wi-Fi password \n4. Check if Telephone line is tightly connected.\n",
+        "si": "1. කෝටාව ඉක්මවා ඇත්දැයි බැලීමට භාවිතය පරීක්ෂා කරන්න; MySLT App/Portal (https://myslt.slt.lk/) හරහා \n2. රවුටරය නැවත restart කරන්න\n3. Wi-Fi මුරපදය වෙනස් කරන්න\n4. දුරකථන මාර්ගය තදින් සම්බන්ධ වී ඇත්දැයි පරීක්ෂා කරන්න.\n"
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 30
+      }
+    },
+    {
+      "id": "faq_028",
+      "tag": "Troubleshooting (Internet)",
+      "category": "Internet BB Troubleshoot FAQs",
+      "question": "How do I connect a wireless extender?",
+      "responses": {
+        "en": "1. Plug in to wall outlet\n2. Press WPS button on router\n3. Press WPS button on wireless extender",
+        "si": "1. Wall outlet එකට සම්බන්ධ කරන්න\n2. Router එකේ WPS බොත්තම ඔබන්න\n3. Wireless Extender එකේ WPS බොත්තම ඔබන්න"
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 31
+      }
+    },
+    {
+      "id": "faq_029",
+      "tag": "Troubleshooting (Internet)",
+      "category": "Internet BB Troubleshoot FAQs",
+      "question": "My wifi is not working",
+      "responses": {
+        "en": "1. Check whether the Device (Phone, laptop etc.) Wi-Fi is turned on.\n2. Check whether all cables are properly connected.\n3. Check whether router Wi-Fi is on. (WLAN) If not switch on by pressing Wi-Fi/WLAN button.\n4. Restart Router.\n",
+        "si": "1. රවුටරය ක්‍රියාත්මක කර ඇත්දැයි පරීක්ෂා කරන්න\n2. සියලුම කේබල් නිවැරදිව සම්බන්ධ වී ඇත්දැයි පරීක්ෂා කරන්න\n3. උපාංගය සහ රවුටරය Wi-Fi ක්‍රියාත්මක කර ඇත්දැයි පරීක්ෂා කරන්න\n4. රවුටරය ක්‍රියා විරහිත කර ක්‍රියාත්මක කිරීමට උත්සාහ කරන්න"
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 32
+      }
+    },
+    {
+      "id": "faq_030",
+      "tag": "Troubleshooting (Internet)",
+      "category": "Internet BB Troubleshoot FAQs",
+      "question": "No internet",
+      "responses": {
+        "en": "1. Check whether router is switched on\n2. Check whether all cables are connected properly\n3. Check whether device and router Wi-Fi is switched on\n4. Try Switching off and switching on the router\n",
+        "si": "1. රවුටරය ක්‍රියාත්මක කර ඇත්දැයි පරීක්ෂා කරන්න\n2. සියලුම කේබල් නිවැරදිව සම්බන්ධ වී ඇත්දැයි පරීක්ෂා කරන්න\n3. උපාංගය සහ රවුටරය Wi-Fi ක්‍රියාත්මක කර ඇත්දැයි පරීක්ෂා කරන්න\n4. රවුටරය ක්‍රියා විරහිත කර ක්‍රියාත්මක කිරීමට උත්සාහ කරන්න\n"
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 33
+      }
+    },
+    {
+      "id": "faq_031",
+      "tag": "Troubleshooting (Internet)",
+      "category": "Internet BB Troubleshoot FAQs",
+      "question": "When I download a file it says my download transfer rate is 1MBps. But I was promised a speed more than 20Mbps.",
+      "responses": {
+        "en": "The difference here depends on the capital \"B\" in MBps and simple \"b\" in Mbps. \nCapital \"B\" refers to Bytes vs the simple \"b\" which refers to bits. As technical theory goes, 1Byte = 8bits. \nHence the value shown as Transfer Speed when downloading a file directly from the net, normaly shows in Mega Bytes per second (MBps). Which means 1MBps (Mega Bytes per second) equals to 8Mbps (Mega bits per second).",
+        "si": "මෙහි වෙනස රඳා පවතින්නේ MBps හි කැපිටල් \"B\"  සහ Mbps හි සිම්පල් \"b\" මත ය.\nකැපිටල් \"B\" යනු බයිට් සහ සිම්පල් \"b\" යනු බිට් ය තාක්ෂණික න්‍යාය අනුව, 1Byte = 8bit .\nඑබැවින් ජාලයෙන් ගොනුවක් කෙලින්ම බාගත කිරීමේදී හුවමාරු වේගය(Transfer Rate) ලෙස පෙන්වන අගය, සාමාන්‍යයෙන් තත්පරයට මෙගා බයිට් වලින් (MBps) පෙන්වයි. එනම් 1MBps (තත්පරයට මෙගා බයිට්) 8Mbps (තත්පරයට මෙගා බිට්) සමාන වේ."
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 34
+      }
+    },
+    {
+      "id": "faq_032",
+      "tag": "Troubleshooting (Internet)",
+      "category": "Internet BB Troubleshoot FAQs",
+      "question": "Wifi password change",
+      "responses": {
+        "en": "~ If Wi-Fi not connected to device, use LAN (Ethernet) cable to first connect to router.\n~ Type 192.168.1.1 (192.168.0.1 in some routers, mentioned in back of router) on the address bar of the browser window\n~ Enter Username and Password mentioned at the back of the router\n~ Select Wi-Fi/WLAN (\"wireless\") and Wi-Fi/WLAN (Wireless) security\n~ Change Password in \"Preshared-Key\" area. (Wi-Fi/Wireless Password)\n\nFor further information on router settings Connect to live Agent",
+        "si": "~ Wi-Fi උපාංගයට සම්බන්ධ නොවන්නේ නම්, පළමුව රවුටරයට සම්බන්ධ වීමට LAN (ඊතර්නෙට්) කේබලය භාවිතා කරන්න.\n~ බ්‍රවුසර කවුළුවේ ලිපින තීරුවේ (Address Bar) 192.168.1.1 (සමහර රවුටරවල 192.168.0.1, රවුටරයේ පිටුපස සඳහන් කර ඇත) ටයිප් කරන්න.\n~ රවුටරයේ පිටුපස සඳහන් කර ඇති Username සහ Password ඇතුළත් කරන්න\\n~ Wi-Fi/WLAN (\"රැහැන් රහිත\") සහ Wi-Fi/WLAN (රැහැන් රහිත) ආරක්ෂාව තෝරන්න\n~ \"Preshared Key\" ප්‍රදේශයේ මුරපදය වෙනස් කරන්න. (Wi-Fi/රැහැන් රහිත මුරපදය)\n\nරවුටර සැකසුම් පිළිබඳ වැඩිදුර තොරතුරු සඳහා සජීවී නියෝජිතයා වෙත සම්බන්ධ වන්න"
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 35
+      }
+    },
+    {
+      "id": "faq_033",
+      "tag": "Troubleshooting (PEO TV)",
+      "category": "PEO Troubleshoot FAQs",
+      "question": "How can I Order/Remove a channel?",
+      "responses": {
+        "en": "Channel Ordering:\nMenu->Self Care->Channels->Select the channel you want to order->Press OK->Enter Purchase PIN (default 111111)->Press OK\n\nHow to Order a Channel MIT:\n1. Go to Home\n2. Select Subscriptions\n3. Choose the Desired Channel from the list\n4. Select Subscribe\n5. Select Subscribe Now\n6. Enter Purchase PIN (default 1111)\n7. After Subscription Successful, Press OK\n\nChannel Removal:\nMenu->Self Care->Current Entitlement->Enter Parental Pin(default 1111)->Press Ok->Channels->Select the channel you want to remove->Press Ok->Enter Purchase Pin(default 111111)->Press Ok\n\nHow to Remove an Ordered Channel (MIT):\n\n1. Go to Home\n2. Select Subscriptions\n3. Select the Channel you want to remove and select View Details\n4. Press OK\n5. Select Cancel Subscription\n6. Press OK\n7. Enter Purchase PIN (Default: 1111)\n8. Press OK\n9. After Unsubscription Successful, Press OK\n",
+        "si": "නාලිකා ඇණවුම් කිරීම:\nMenu->Self Care->Channels->ඔබට ඇණවුම් කිරීමට අවශ්‍ය නාලිකාව තෝරන්න->OK ඔබන්න->මිලදී ගැනීමේ PIN එක ඇතුලත් කරන්න (Default 111111)->OK ඔබන්න\n\nMIT Channel එකක් Order කරන ආකාරය:\n1. Home වෙත යන්න\n2. Subscriptions තෝරන්න\n3. ලැයිස්තුවෙන් අවශ්‍ය Channel එක තෝරන්න\n4. Subscribe තෝරන්න\n5. Subscribe Now තෝරන්න\n6. Purchase PIN එක ඇතුළත් කරන්න (Default: 1111)\n7. Subscription සාර්ථක වූ පසු OK ඔබන්න\n\nනාලිකා ඉවත් කිරීම:\nMenu->Self Care->Current Entitlement->Parental Pin ඇතුලත් කරන්න(Default 1111)->Ok ඔබන්න->Channels->ඔබට ඉවත් කිරීමට අවශ්‍ය නාලිකාව තෝරන්න->Ok ඔබන්න->මිලදී ගැනීමේ Pin එක ඇතුල් කරන්න (Default 111111)->OK ඔබන්න\n\nOrdered Channel එකක් ඉවත් කරන ආකාරය (MIT):\n\n1. Home වෙත යන්න\n2. Subscriptions තෝරන්න\n3. ඉවත් කිරීමට අවශ්‍ය Channel එක තෝරා View Details තෝරන්න\n4. OK ඔබන්න\n5. Cancel Subscription තෝරන්න\n6. OK ඔබන්න\n7. Purchase PIN එක ඇතුළත් කරන්න (Default: 1111)\n8. OK ඔබන්න\n9. Subscription ඉවත් කිරීම සාර්ථක වූ පසු OK ඔබන්න"
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 36
+      }
+    },
+    {
+      "id": "faq_034",
+      "tag": "Troubleshooting (PEO TV)",
+      "category": "PEO Troubleshoot FAQs",
+      "question": "How can I block a channel?",
+      "responses": {
+        "en": "Channels and Video content can be blocked from viewing by turning on the Parental Control option.\nTo Activate go to Menu -> Settings -> Channel Blocking",
+        "si": "Parental control  ක්‍රියාත්මක කිරීමෙන් නාලිකා සහ වීඩියෝ අන්තර්ගතය බැලීමෙන් අවහිර කළ හැක.\nසක්‍රිය කිරීමට Menu-> Settings -> Channel Blocking වෙත යන්න"
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 37
+      }
+    },
+    {
+      "id": "faq_035",
+      "tag": "Troubleshooting (PEO TV)",
+      "category": "PEO Troubleshoot FAQs",
+      "question": "How can I order movies/Music/Educational content?",
+      "responses": {
+        "en": "VOD (Video On Demand) ; Database of Movies. To activate; Menu -> Movies/VOD\nMOD (Music On Demand) ; Database of Music Albums. To activate; Menu -> Music/MOD \nEOD (Education On Demand) ; Database of Educational content. To Activate; Menu -> Education/EOD",
+        "si": "VOD (ඉල්ලුම මත වීඩියෝ) ; චිත්‍රපටවල දත්ත සමුදාය. සක්‍රිය කිරීමට; මෙනුව -> චිත්‍රපට/VOD\nMOD (ඉල්ලුම මත සංගීතය); සංගීත ඇල්බම දත්ත සමුදාය. සක්රිය කිරීමට; මෙනුව -> සංගීතය/MOD\nEOD (ඉල්ලුම මත අධ්‍යාපනය) ; අධ්යාපනික අන්තර්ගතයේ දත්ත සමුදාය. සක්රිය කිරීමට; මෙනුව -> අධ්‍යාපනය/EOD"
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 38
+      }
+    },
+    {
+      "id": "faq_036",
+      "tag": "Troubleshooting (PEO TV)",
+      "category": "PEO Troubleshoot FAQs",
+      "question": "How can I rewind a live program?",
+      "responses": {
+        "en": "Only works on Catch UP/TSTV enabled channels. Just press on the Rewind (<<) Button on your remote.",
+        "si": "Catch UP/TSTV සක්‍රීය කළ නාලිකා මත පමණක් ක්‍රියා කරයි. ඔබගේ දුරස්ථ පාලකයේ Rewind (<<) බොත්තම ඔබන්න"
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 39
+      }
+    },
+    {
+      "id": "faq_037",
+      "tag": "Troubleshooting (PEO TV)",
+      "category": "PEO Troubleshoot FAQs",
+      "question": "How do I use Catch up TV/TSTV?",
+      "responses": {
+        "en": "Catch up TV/TSTV (Past program viewable facility)\n1. Go to channel with catch up facility\n2. Select Channel universe button on remote (right hand next to menu button)\n3. Select Previous\n4. Select time slot in horizontal menu at bottom\n5. Press play\n\nHow to watch catch up TV (MIT)\n1. Go to Home\n2. Select EPG\n3. Select the desired channel and Programme/Content by using the navigation keys on the Remote Control\n4. Press OK on the desired Programme/Content\n5. Navigate to play\n6. Press ok",
+        "si": "Catch up TV/TSTV (පසුගිය වැඩසටහන් නැරඹිය හැකි පහසුකම)\n1. Catch up TV/TSTV පහසුකම සහිත නාලිකාව වෙත යන්න\n2. දුරස්ථ පාලකයේ චැනල් විශ්ව බොත්තම තෝරන්න (මෙනු බොත්තම අසල දකුණු අත)\n3. \"Previous\" තෝරන්න\n4. පහළ ඇති තිරස් මෙනුවේ කාල පරතරය තෝරන්න\n5. Play ඔබන්න\n\nMIT Catch Up TV බලන ආකාරය:\n1. Home වෙත යන්න\n2. EPG තෝරන්න\n3. Remote Control එකේ Navigation Keys භාවිතා කර අවශ්‍ය Channel එක සහ Programme/Content එක තෝරන්න\n4. අවශ්‍ය Programme/Content එක මත OK ඔබන්න\n5. Play වෙත යන්න\n6. OK ඔබන්න"
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 40
+      }
+    },
+    {
+      "id": "faq_038",
+      "tag": "Troubleshooting (PEO TV)",
+      "category": "PEO Troubleshoot FAQs",
+      "question": "How do I use the \"Picture In Picture\" function?\nHow can I watch two channels at the same time?",
+      "responses": {
+        "en": "Picture in Picture (only available in some channels)\n1. Press Up or down arrow on remote to activate channel list\n2. Go to the channel you want (PIP enabled)\n3. Press the green button (G) on remote\n4. Use Green button(G) to toggle between channels",
+        "si": "පින්තූරය තුල පින්තූරය (සමහර නාලිකා වල පමණක් තිබේ)\n1. නාලිකා ලැයිස්තුව සක්‍රිය කිරීමට දුරස්ථ පාලකයේ ඉහළ හෝ පහළ ඊතලය ඔබන්න\n2. ඔබට අවශ්‍ය නාලිකාව වෙත යන්න (PIP සක්‍රීය කර ඇත)\n3. දුරස්ථ පාලකයේ හරිත බොත්තම (G) ඔබන්න\n4. නාලිකා අතර ටොගල් කිරීමට හරිත බොත්තම(G) භාවිතා කරන්න"
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 41
+      }
+    },
+    {
+      "id": "faq_039",
+      "tag": "Troubleshooting (PEO TV)",
+      "category": "PEO Troubleshoot FAQs",
+      "question": "I am getting a \"Encrypted Program\" error",
+      "responses": {
+        "en": "\"1. Check whether network cable is connected tightly to the LAN 4 port in the router\n2. Restart router and STB\n",
+        "si": "1. ජාල කේබලය රවුටරයේ LAN 4 පෝට් එකට තදින් සම්බන්ධ වී ඇත්දැයි පරීක්ෂා කරන්න\n2. රවුටරය සහ STB නැවත ආරම්භ කරන්න\n"
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 42
+      }
+    },
+    {
+      "id": "faq_040",
+      "tag": "Troubleshooting (PEO TV)",
+      "category": "PEO Troubleshoot FAQs",
+      "question": "I am getting a \"No signal\" error",
+      "responses": {
+        "en": "1. Check whether Set Top Box and router are switched on correctly\n2. Check whether correct input mode is selected on TV (HDMI or AV) and STB\n3. Check whether video (HDMI) cable is connected tightly to TV\n",
+        "si": "\"1. සෙට් ටොප් බොක්ස් සහ රවුටරය නිවැරදිව ක්‍රියාත්මක වී ඇත්දැයි පරීක්ෂා කරන්න\n2. TV (HDMI හෝ AV) සහ STB මත නිවැරදි ආදාන මාදිලිය තෝරාගෙන තිබේදැයි පරීක්ෂා කරන්න\n\\3. වීඩියෝ (HDMI) කේබලය රූපවාහිනියට තදින් සම්බන්ධ වී ඇත්දැයි පරීක්ෂා කරන්න\n"
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 43
+      }
+    },
+    {
+      "id": "faq_041",
+      "tag": "Troubleshooting (PEO TV)",
+      "category": "PEO Troubleshoot FAQs",
+      "question": "No sound",
+      "responses": {
+        "en": "1. Check whether the Sound (or HDMI) cable is connected tightly to TV and STB\n2. Restart TV, STB and router\n",
+        "si": "1. Sound (හෝ HDMI) කේබලය රූපවාහිනියට සහ STB වෙත තදින් සම්බන්ධ වී ඇත්දැයි පරීක්ෂා කරන්න\n2. TV STB සහ රවුටරය නැවත ආරම්භ කරන්න\n"
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 44
+      }
+    },
+    {
+      "id": "faq_042",
+      "tag": "Troubleshooting (PEO TV)",
+      "category": "PEO Troubleshoot FAQs",
+      "question": "No video",
+      "responses": {
+        "en": "1. Check whether the video (HDMI) cable is connected tightly to TV and STB\n2. Restart TV, STB and router\n3. If still make a complaint via the MySLT App/Portal (https://myslt.slt.lk/",
+        "si": "1. වීඩියෝ (HDMI) කේබලය රූපවාහිනියට සහ STB වෙත තදින් සම්බන්ධ වී ඇත්දැයි පරීක්ෂා කරන්න\n2. ටීවී, එස්ටීබී සහ රවුටරය නැවත ආරම්භ කරන්න\n3. තවමත් MySLT App/Portal (https://myslt.slt.lk/) හරහා පැමිණිල්ලක් කරන්නේ"
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 45
+      }
+    },
+    {
+      "id": "faq_043",
+      "tag": "Troubleshooting (Voice)",
+      "category": "Voice Troubleshoot FAQs",
+      "question": "I can hear a disturbance/Noise in my phone when speaking\nThe line is not clear",
+      "responses": {
+        "en": " Check whether cable are tightly connected\n",
+        "si": "කේබලය තදින් සම්බන්ධ වී ඇත්දැයි පරීක්ෂා කරන්න\n"
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 46
+      }
+    },
+    {
+      "id": "faq_044",
+      "tag": "Troubleshooting (Voice)",
+      "category": "Voice Troubleshoot FAQs",
+      "question": "I can't hear the dial tone",
+      "responses": {
+        "en": "Check whether cable are tightly connected\n",
+        "si": "කේබලය තදින් සම්බන්ධ වී ඇත්දැයි පරීක්ෂා කරන්න\n"
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 47
+      }
+    },
+    {
+      "id": "faq_045",
+      "tag": "Troubleshooting (Voice)",
+      "category": "Voice Troubleshoot FAQs",
+      "question": "The ringing sound is very low",
+      "responses": {
+        "en": " Set Tone volume to high by adjusting ring tone volume button on the unit\n",
+        "si": "ඒකකයේ රිංග් ටෝන් වොලියුම් බොත්තම සීරුමාරු කිරීමෙන් ටෝන් වොලියම් ඉහළට සකසන්න\n"
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 48
+      }
+    },
+    {
+      "id": "faq_046",
+      "tag": "Troubleshooting (Voice)",
+      "category": "Voice Troubleshoot FAQs",
+      "question": "The phone wire within/outside premises is damaged",
+      "responses": {
+        "en": "1. If wire was installed by SLT-MOBITEL, make a complaint here\n2. If wire was installed by a private party, give a letter to closest SLT-MOBITEL office in order to get it repaired",
+        "si": "1. වයර් SLT-MOBITEL විසින් ස්ථාපනය කර ඇත්නම් පැමිණිල්ලක් කරන්න\n 2. පෞද්ගලික පාර්ශ්වයක් විසින් වයර් සවි කර ඇත්නම්, එය අලුත්වැඩියා කර ගැනීම සඳහා ළඟම ඇති SLT-MOBITEL කාර්යාලයට ලිපියක් දෙන්න."
+      },
+      "source": {
+        "sheet": "Sheet1",
+        "row": 49
+      }
+    }
+  ]
+}
