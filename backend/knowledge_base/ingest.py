@@ -7,33 +7,32 @@ Run once before starting the API, or re-run any time files change:
 
 Idempotency guarantee
 ---------------------
-Each source file is hashed.  If the hash and the number of embedded
-vectors for that source are both unchanged the source is skipped.  When
-a file changes, its old vectors are deleted and replaced in one
-transaction per source, leaving every other source's vectors intact.
+Each source file is hashed (SHA-256). If the hash and the number of embedded
+vectors for that source are both unchanged, the source is skipped. When a file
+changes, its old vectors are deleted and replaced in one transaction per source,
+leaving every other source's vectors intact. Stale vectors from removed sources
+are purged automatically to prevent duplicate or outdated responses.
 
 Supported file types (auto-discovered from data/)
 --------------------------------------------------
-* .xlsx  – FAQ workbook (Tag / Category / Question / Response columns)
-* .pdf   – Package details PDF (selectable text, page-by-page + chunked)
+* .json  – Structured FAQ and package details knowledge files (UTF-8)
 * .txt   – Plain-text knowledge files (UTF-8)
 """
 from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import logging
 import re
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable
 
 from langchain_core.documents import Document
 from langchain_postgres import PGVector
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from openpyxl import load_workbook
-from pypdf import PdfReader
 from sqlalchemy import select
 
 from config import Settings, get_settings
@@ -47,19 +46,11 @@ DATA_DIR = Path(__file__).resolve().parent / "data"
 # Text splitters
 # ---------------------------------------------------------------------------
 
-# General splitter used for PDF pages and TXT files
+# General splitter used for long text blocks and TXT files
 _TEXT_SPLITTER = RecursiveCharacterTextSplitter(
     chunk_size=1800,
     chunk_overlap=220,
     separators=["\n\n", "\n", ". ", " ", ""],
-)
-
-# Tighter splitter for PDF pages that contain dense tables — smaller chunks
-# keep package name + price + data together during retrieval.
-_TABLE_SPLITTER = RecursiveCharacterTextSplitter(
-    chunk_size=900,
-    chunk_overlap=150,
-    separators=["\n\n", "\n", "  ", " ", ""],
 )
 
 # ---------------------------------------------------------------------------
@@ -113,247 +104,266 @@ def _txt_category(path: Path) -> str:
     return "SLT-MOBITEL general information"
 
 
-def _is_table_heavy(text: str) -> bool:
-    """Heuristic: many short whitespace-separated columns ≈ table content."""
-    lines = [ln for ln in text.splitlines() if ln.strip()]
-    if not lines:
-        return False
-    multi_space = sum(1 for ln in lines if re.search(r"\s{3,}", ln))
-    return multi_space / len(lines) > 0.5
-
-
 # ---------------------------------------------------------------------------
-# Per-format loaders
+# JSON loaders
 # ---------------------------------------------------------------------------
 
-def _load_workbook(path: Path, source_hash: str) -> list[Document]:
-    """Load FAQ Q&A pairs from an Excel workbook.
-
-    Expected layout (1-indexed rows):
-        Row 1 : empty / title
-        Row 2 : Tag | Category | Question | Response | (empty)
-        Row 3 : (empty) | (empty) | (empty)  | English | Sinhala
-        Row 4+: data rows
-    """
-    workbook = load_workbook(path, read_only=True, data_only=True)
+def _parse_faq_json(data: dict[str, Any], path: Path, source_hash: str) -> list[Document]:
+    """Parse FAQ entries from structured JSON format (e.g. SLT_FAQ_V4.json)."""
+    faqs = data.get("faqs", [])
     documents: list[Document] = []
-    try:
-        for worksheet in workbook.worksheets:
-            rows = list(worksheet.iter_rows(values_only=True))
-            if len(rows) < 3:
-                logger.warning("Workbook sheet %r has fewer than 3 rows — skipping.", worksheet.title)
-                continue
+    seen: set[str] = set()
+    skipped_empty = 0
 
-            # Row index 1 (0-based) holds the main column headers
-            headers = [
-                str(value).strip().lower() if value is not None else ""
-                for value in rows[1]
-            ]
+    for idx, item in enumerate(faqs, start=1):
+        faq_id = str(item.get("id") or f"faq_{idx:03d}")
+        question = str(item.get("question") or "").strip()
+        responses = item.get("responses") or {}
 
-            # Locate required columns by name
-            try:
-                tag_index = headers.index("tag")
-            except ValueError:
-                # Try fuzzy: first column whose header starts with "tag"
-                tag_index = next(
-                    (i for i, h in enumerate(headers) if h.startswith("tag")), None
-                )
-            try:
-                category_index = headers.index("category")
-            except ValueError:
-                category_index = next(
-                    (i for i, h in enumerate(headers) if "categor" in h), None
-                )
-            try:
-                question_index = headers.index("question")
-            except ValueError:
-                question_index = next(
-                    (i for i, h in enumerate(headers) if "question" in h), None
-                )
-            try:
-                response_index = headers.index("response")
-            except ValueError:
-                response_index = next(
-                    (i for i, h in enumerate(headers) if "response" in h or "answer" in h), None
-                )
+        if isinstance(responses, dict):
+            english = str(responses.get("en") or "").strip()
+            sinhala = str(responses.get("si") or "").strip()
+        elif isinstance(responses, str):
+            english = responses.strip()
+            sinhala = ""
+        else:
+            english = ""
+            sinhala = ""
 
-            missing = [
-                name for name, idx in (
-                    ("tag", tag_index),
-                    ("category", category_index),
-                    ("question", question_index),
-                    ("response", response_index),
-                )
-                if idx is None
-            ]
-            if missing:
-                raise ValueError(
-                    f"{path.name}/{worksheet.title}: could not locate columns: {missing}. "
-                    f"Found headers: {headers}"
-                )
+        if not question or (not english and not sinhala):
+            skipped_empty += 1
+            continue
 
-            # Row index 2 (0-based) is the sub-header row (English / Sinhala).
-            # Detect the Sinhala column from the actual sub-header row rather
-            # than assuming a fixed offset.
-            sub_headers = [
-                str(value).strip().lower() if value is not None else ""
-                for value in rows[2]
-            ]
-            english_col: int = response_index  # default: same column as Response
-            sinhala_col: int | None = None
-            for col_idx, sh in enumerate(sub_headers):
-                if "english" in sh or "eng" == sh:
-                    english_col = col_idx
-                elif "sinhala" in sh or "si" == sh or "සිං" in sh:
-                    sinhala_col = col_idx
+        raw_tag = str(item.get("tag") or "").strip()
+        raw_category = str(item.get("category") or "").strip()
 
-            # If sub-header detection failed, fall back to response+1 convention
-            if sinhala_col is None and response_index + 1 < len(headers):
-                sinhala_col = response_index + 1
+        tag = raw_tag or "General"
+        category = raw_category or tag
+        full_category = f"{tag} / {category}" if category and category != tag else (category or tag)
 
-            seen: set[str] = set()
-            skipped_empty = 0
-            last_tag = "General"
+        content = f"Question: {question}\nAnswer (English): {english}"
+        if sinhala:
+            content += f"\nAnswer (Sinhala): {sinhala}"
 
-            for row_number, row in enumerate(rows[3:], start=4):
-                question = str(row[question_index] or "").strip()
-                english = str(row[english_col] or "").strip()
-                sinhala = (
-                    str(row[sinhala_col] or "").strip()
-                    if sinhala_col is not None and sinhala_col < len(row)
-                    else ""
-                )
-                # Skip rows with no question or no answer at all
-                if not question or (not english and not sinhala):
-                    skipped_empty += 1
-                    continue
+        identity = hashlib.sha256(content.encode("utf-8")).hexdigest()
+        if identity in seen:
+            logger.debug("Skipping duplicate FAQ %s in %s.", faq_id, path.name)
+            continue
+        seen.add(identity)
 
-                raw_tag = str(row[tag_index] or "").strip() if tag_index < len(row) else ""
-                category = str(row[category_index] or "").strip() if category_index < len(row) else ""
+        clean_q = re.sub(r"\s+", " ", question).strip()
+        title = f"FAQ: {clean_q[:65]}"
 
-                if raw_tag:
-                    last_tag = raw_tag
-                    tag = raw_tag
-                elif category:
-                    derived = category.replace("FAQs", "").replace("FAQ", "").strip()
-                    tag = derived if derived else last_tag
-                else:
-                    tag = last_tag
+        documents.append(
+            Document(
+                id=_stable_id(path.name, faq_id),
+                page_content=content,
+                metadata=_metadata(
+                    source=path.name,
+                    source_hash=source_hash,
+                    content_type="json",
+                    document_id=faq_id,
+                    chunk_id=0,
+                    category=full_category,
+                    title=title,
+                ),
+            )
+        )
 
-                tag = tag or "General"
-                full_category = f"{tag} / {category}" if category and category != tag else (category or tag)
+    if skipped_empty:
+        logger.info("%s: skipped %d empty/incomplete FAQ entries.", path.name, skipped_empty)
 
-                content = f"Question: {question}\nAnswer (English): {english}"
-                if sinhala:
-                    content += f"\nAnswer (Sinhala): {sinhala}"
-
-                identity = hashlib.sha256(content.encode("utf-8")).hexdigest()
-                if identity in seen:
-                    logger.debug("Skipping duplicate row %s/%s.", worksheet.title, row_number)
-                    continue
-                seen.add(identity)
-
-                clean_q = re.sub(r"\s+", " ", question).strip()
-                title = f"FAQ: {clean_q[:65]}"
-
-                document_id = f"{worksheet.title}-row{row_number}"
-                documents.append(
-                    Document(
-                        id=_stable_id(path.name, document_id),
-                        page_content=content,
-                        metadata=_metadata(
-                            source=path.name,
-                            source_hash=source_hash,
-                            content_type="xlsx",
-                            document_id=document_id,
-                            chunk_id=0,
-                            category=full_category,
-                            title=title,
-                        ),
-                    )
-                )
-
-            if skipped_empty:
-                logger.info(
-                    "%s/%s: skipped %d empty/incomplete rows.",
-                    path.name, worksheet.title, skipped_empty,
-                )
-
-    finally:
-        workbook.close()
-
-    if not documents:
-        logger.warning("No usable rows found in %s.", path.name)
-    else:
-        logger.info("Loaded %d Q&A documents from %s.", len(documents), path.name)
     return documents
 
 
-def _load_pdf(path: Path, source_hash: str) -> list[Document]:
-    """Extract text from each PDF page and chunk it.
+def _parse_package_json(data: dict[str, Any], path: Path, source_hash: str) -> list[Document]:
+    """Parse package details and connection charges from JSON (e.g. SLT_Package_Details_New_Connection_Charges_V1_2.json).
 
-    Table-heavy pages use a tighter splitter so that package name, price,
-    and data allowance are kept together in one chunk rather than split across
-    chunk boundaries.
+    Produces two complementary document levels:
+      1. Section Overview: complete structured summary of the section and all its
+         packages (ideal for multi-package comparison, general questions, and
+         broader retrieval).
+      2. Individual Record: detailed breakdown of each specific package/connection charge
+         (ideal for direct pinpoint lookup by name, rental, or facility).
     """
-    reader = PdfReader(str(path))
+    sections = data.get("sections", [])
     documents: list[Document] = []
-    failed_pages: list[int] = []
 
-    for page_number, page in enumerate(reader.pages, start=1):
-        raw = (page.extract_text() or "").strip()
-        if not raw:
-            logger.error(
-                "No selectable text on %s page %d — image-only or encrypted page.",
-                path.name, page_number,
+    for s_idx, sec in enumerate(sections, start=1):
+        sec_id = str(sec.get("section_id") or f"section_{s_idx:02d}")
+        sec_title = str(sec.get("title") or "SLT Packages").strip()
+        page = sec.get("source_page") or s_idx
+        cols = sec.get("columns") or {}
+        records = sec.get("records") or []
+
+        category = f"Packages / {sec_title}"
+        section_title = f"SLT Packages: {sec_title} (p.{page})"
+
+        pkg_names: list[str] = []
+        overview_lines: list[str] = []
+
+        for r_idx, rec in enumerate(records):
+            # Extract the primary label for this record
+            name = (
+                rec.get("package")
+                or rec.get("package_name")
+                or rec.get("price_plan_name")
+                or rec.get("service_type")
+                or rec.get("new_connection_type")
+                or rec.get("customer_category")
             )
-            failed_pages.append(page_number)
-            continue
+            name_str = str(name).strip() if name is not None else f"Record {r_idx + 1}"
+            if name_str and name_str not in pkg_names:
+                pkg_names.append(name_str)
 
-        if "\ufffd" in raw:
-            logger.warning(
-                "%s page %d contains replacement characters (\\ufffd); "
-                "verify extracted glyphs manually.",
-                path.name, page_number,
-            )
+            # Build readable attributes for the record
+            parts: list[str] = []
+            detailed_fields: list[str] = [
+                f"Package/Service: {name_str}",
+                f"Category/Section: {sec_title} (Page {page})",
+            ]
 
-        # Extract meaningful page heading from the first non-empty line
-        lines = [ln.strip() for ln in raw.splitlines() if ln.strip()]
-        page_heading = lines[0][:60] if lines else f"Page {page_number}"
+            for col_k, col_label in cols.items():
+                val = rec.get(col_k)
+                if val is not None and str(val).strip():
+                    parts.append(f"{col_label}: {val}")
+                    detailed_fields.append(f"{col_label}: {val}")
 
-        # Choose the appropriate splitter based on content density
-        splitter = _TABLE_SPLITTER if _is_table_heavy(raw) else _TEXT_SPLITTER
-        chunks = splitter.split_text(raw)
+            # Include any additional fields not in columns definition
+            for k, v in rec.items():
+                if k not in cols and k not in ("source_page", "inherited_from_merged_cell") and v is not None:
+                    v_str = str(v).strip()
+                    if v_str:
+                        label = k.replace("_", " ").title()
+                        parts.append(f"{label}: {v_str}")
+                        detailed_fields.append(f"{label}: {v_str}")
 
-        for chunk_index, chunk_text in enumerate(chunks):
-            if not chunk_text.strip():
-                continue
-            document_id = f"page-{page_number}-chunk-{chunk_index}"
-            chunk_suffix = f" (Part {chunk_index + 1})" if len(chunks) > 1 else ""
+            overview_lines.append(f"- {name_str} | " + " | ".join(parts))
+
+            # ── 1. Individual Record Document ─────────────────────────────────
+            rec_doc_id = f"{sec_id}-rec-{r_idx}"
+            item_title = f"{name_str} ({sec_title})"[:70]
+            rec_content = "\n".join(detailed_fields)
+
             documents.append(
                 Document(
-                    id=_stable_id(path.name, document_id),
-                    page_content=chunk_text.strip(),
+                    id=_stable_id(path.name, rec_doc_id),
+                    page_content=rec_content,
                     metadata=_metadata(
                         source=path.name,
                         source_hash=source_hash,
-                        content_type="pdf",
-                        document_id=document_id,
-                        chunk_id=chunk_index,
-                        category=f"Packages / {page_heading}",
-                        title=f"SLT Packages: {page_heading} (p.{page_number}){chunk_suffix}",
+                        content_type="json",
+                        document_id=rec_doc_id,
+                        chunk_id=r_idx + 1,
+                        category=category,
+                        title=item_title,
                     ),
                 )
             )
 
-    if failed_pages:
-        logger.error(
-            "%s: could not extract text from %d/%d pages: %s",
-            path.name, len(failed_pages), len(reader.pages), failed_pages,
+        # ── 2. Section Overview Document ─────────────────────────────────────
+        overview_doc_id = f"{sec_id}-overview"
+        overview_header = (
+            f"Section: {sec_title} (Page {page})\n"
+            f"Included Packages/Options: {', '.join(pkg_names)}\n"
         )
-    else:
-        logger.info("Loaded %d chunks from %s (%d pages).", len(documents), path.name, len(reader.pages))
+        overview_content = overview_header + "\n" + "\n".join(overview_lines)
 
+        documents.append(
+            Document(
+                id=_stable_id(path.name, overview_doc_id),
+                page_content=overview_content,
+                metadata=_metadata(
+                    source=path.name,
+                    source_hash=source_hash,
+                    content_type="json",
+                    document_id=overview_doc_id,
+                    chunk_id=0,
+                    category=category,
+                    title=section_title,
+                ),
+            )
+        )
+
+    return documents
+
+
+def _load_json(path: Path, source_hash: str) -> list[Document]:
+    """Load knowledge documents from a JSON file.
+
+    Dispatches based on the JSON schema:
+      - FAQ format (contains 'faqs') -> _parse_faq_json
+      - Package format (contains 'sections') -> _parse_package_json
+      - Generic JSON -> fallback key/value document conversion
+    """
+    raw_content = path.read_text(encoding="utf-8", errors="replace").strip()
+    if not raw_content:
+        logger.warning("JSON source %s is empty — skipping.", path.name)
+        return []
+
+    try:
+        data = json.loads(raw_content)
+    except json.JSONDecodeError as exc:
+        logger.error("Failed to decode JSON in %s: %s", path.name, exc)
+        return []
+
+    documents: list[Document] = []
+
+    if isinstance(data, dict):
+        if "faqs" in data:
+            documents = _parse_faq_json(data, path, source_hash)
+        elif "sections" in data:
+            documents = _parse_package_json(data, path, source_hash)
+        else:
+            # Generic dict: chunk or represent as structured text
+            logger.info("Parsing %s as generic JSON dictionary.", path.name)
+            title = path.stem.replace("_", " ").replace("-", " ").title()
+            category = _txt_category(path)
+            content = json.dumps(data, indent=2, ensure_ascii=False)
+            for idx, chunk in enumerate(_TEXT_SPLITTER.split_text(content)):
+                if not chunk.strip():
+                    continue
+                doc_id = f"chunk-{idx}"
+                documents.append(
+                    Document(
+                        id=_stable_id(path.name, doc_id),
+                        page_content=chunk.strip(),
+                        metadata=_metadata(
+                            source=path.name,
+                            source_hash=source_hash,
+                            content_type="json",
+                            document_id=doc_id,
+                            chunk_id=idx,
+                            category=category,
+                            title=f"{title} (Part {idx + 1})" if idx > 0 else title,
+                        ),
+                    )
+                )
+    elif isinstance(data, list):
+        # Generic list of items
+        logger.info("Parsing %s as list of JSON items.", path.name)
+        title = path.stem.replace("_", " ").replace("-", " ").title()
+        category = _txt_category(path)
+        for idx, item in enumerate(data):
+            doc_id = f"item-{idx}"
+            content = json.dumps(item, indent=2, ensure_ascii=False)
+            documents.append(
+                Document(
+                    id=_stable_id(path.name, doc_id),
+                    page_content=content,
+                    metadata=_metadata(
+                        source=path.name,
+                        source_hash=source_hash,
+                        content_type="json",
+                        document_id=doc_id,
+                        chunk_id=idx,
+                        category=category,
+                        title=f"{title} Item {idx + 1}",
+                    ),
+                )
+            )
+
+    logger.info("Loaded %d documents from %s.", len(documents), path.name)
     return documents
 
 
@@ -400,16 +410,15 @@ def _load_text(path: Path, source_hash: str) -> list[Document]:
 # ---------------------------------------------------------------------------
 
 _LOADERS: dict[str, Callable[[Path, str], list[Document]]] = {
-    ".xlsx": _load_workbook,
-    ".pdf": _load_pdf,
+    ".json": _load_json,
     ".txt": _load_text,
 }
 
-# Ordered list of explicitly registered files.  Any .txt file found in data/
-# is automatically added after the registered files (alphabetical order).
+# Registered knowledge-base files. Auto-discovered .json and .txt files in data/
+# are appended automatically.
 _REGISTERED_FILES = (
-    "FAQ.V4.xlsx",
-    "SLT Package details and New Connection Charges. V1.2.pdf",
+    "SLT_FAQ_V4.json",
+    "SLT_Package_Details_New_Connection_Charges_V1_2.json",
 )
 
 
@@ -417,9 +426,8 @@ def _discover_sources(data_dir: Path) -> list[Path]:
     """Return an ordered list of source paths.
 
     Registered files come first (they are required and will raise
-    FileNotFoundError if missing).  Additional .txt files discovered in
-    data_dir are appended automatically so new files do not require a code
-    change.
+    FileNotFoundError if missing). Additional .json and .txt files discovered in
+    data_dir are appended automatically.
     """
     paths: list[Path] = []
 
@@ -432,12 +440,13 @@ def _discover_sources(data_dir: Path) -> list[Path]:
             )
         paths.append(path)
 
-    # Auto-discover any .txt files not already in the list
+    # Auto-discover any additional .json and .txt files not already registered
     registered_names = {p.name for p in paths}
-    for txt_path in sorted(data_dir.glob("*.txt")):
-        if txt_path.name not in registered_names:
-            paths.append(txt_path)
-            logger.info("Auto-discovered text file: %s", txt_path.name)
+    for file_path in sorted(data_dir.iterdir()):
+        if file_path.is_file() and file_path.suffix.lower() in (".json", ".txt"):
+            if file_path.name not in registered_names:
+                paths.append(file_path)
+                logger.info("Auto-discovered knowledge file: %s", file_path.name)
 
     return paths
 
@@ -446,8 +455,7 @@ def load_knowledge_documents(data_dir: Path = DATA_DIR) -> list[Document]:
     """Load all knowledge-base documents without touching the database.
 
     Raises FileNotFoundError if a registered file is missing.
-    Returns an empty list if data_dir does not exist (used for graceful
-    server startup when the database is not yet populated).
+    Returns an empty list if data_dir does not exist.
     """
     if not data_dir.exists():
         logger.warning("Knowledge-base data directory not found: %s", data_dir)
@@ -488,23 +496,51 @@ def _existing_source_rows(store: PGVector, source: str) -> list[tuple[str, dict]
         return [(str(row.id), row.cmetadata or {}) for row in session.execute(statement)]
 
 
+def _clean_outdated_sources(store: PGVector, active_sources: set[str]) -> list[str]:
+    """Purge vectors whose source file is no longer in the active knowledge base.
+
+    This ensures old sources (e.g. legacy PDF or XLSX files) do not linger in the
+    pgvector collection and cause duplicate, conflicting, or outdated answers.
+    """
+    purged: list[str] = []
+    with store._make_sync_session() as session:
+        collection = store.get_collection(session)
+        if collection is None:
+            return []
+        statement = select(
+            store.EmbeddingStore.id,
+            store.EmbeddingStore.cmetadata,
+        ).where(
+            store.EmbeddingStore.collection_id == collection.uuid,
+        )
+        stale_ids: list[str] = []
+        for row in session.execute(statement):
+            meta = row.cmetadata or {}
+            source = meta.get("source")
+            if source and source not in active_sources:
+                stale_ids.append(str(row.id))
+                if source not in purged:
+                    purged.append(source)
+
+    if stale_ids:
+        store.delete(ids=stale_ids)
+        logger.info(
+            "Purged %d outdated vectors from removed sources: %s",
+            len(stale_ids),
+            purged,
+        )
+    return purged
+
+
 def ingest_knowledge_base(
     settings: Settings | None = None,
     *,
     dry_run: bool = False,
 ) -> dict[str, int]:
-    """Embed and store all knowledge-base documents.
+    """Embed and store all knowledge-base documents into pgvector.
 
-    Returns a dict mapping source filename → number of vectors written (0 if
-    unchanged, positive if new/replaced).
-
-    Parameters
-    ----------
-    settings:
-        If None, loaded from environment / .env file.
-    dry_run:
-        If True, load and parse files but skip all database writes.
-        Useful for checking file parsing without a live database.
+    Removes outdated entries from deleted source files and updates changed files.
+    Returns a dict mapping source filename → number of vectors written.
     """
     settings = settings or get_settings()
     if not settings.google_api_key:
@@ -542,6 +578,10 @@ def ingest_knowledge_base(
         connection=settings.database_url,
         use_jsonb=True,
     )
+
+    # Clean up stale/outdated sources (e.g. old XLSX or PDF vectors)
+    active_sources = set(by_source.keys())
+    _clean_outdated_sources(store, active_sources)
 
     counts = {}
     for source, source_docs in by_source.items():
@@ -582,7 +622,7 @@ def ingest_knowledge_base(
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Ingest SLT-MOBITEL knowledge-base files into pgvector.",
+        description="Ingest SLT-MOBITEL JSON knowledge-base files into pgvector.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
