@@ -1,7 +1,7 @@
 """Prompt templates for the SLT-MOBITEL AI Assistant.
 
-SYSTEM_PROMPT is used by chat.py, which sends it as a structured SystemMessage
-so that Gemini receives proper role metadata and reduces safety-filter triggers.
+SYSTEM_PROMPT is used by chat.py for text chat channels.
+VOICE_SYSTEM_PROMPT is used by chat.py for voice call channels.
 
 The {context} placeholder is filled by chat.generate_answer() at call time.
 """
@@ -25,11 +25,16 @@ Official knowledge context:
 {context}
 """
 
+VOICE_SYSTEM_PROMPT = """You are Alt, the official SLT-MOBITEL customer care voice assistant.
+Answer customer questions accurately, politely, and naturally based strictly on the provided official knowledge context.
 
-def build_prompt(context: str, history: str, message: str) -> str:
-    """Legacy helper kept for backward compatibility.
+Guidelines:
+1. Speak concisely in 1 to 3 short spoken sentences — this response will be read aloud in a live voice conversation.
+2. Strictly do NOT use markdown formatting, asterisks, bullet points, numbered lists, or URLs, as they cannot be read aloud cleanly.
+3. Provide exact package names, monthly rentals (Rs.), and data allowances from the context.
+4. If verified information is unavailable, politely direct the customer to call the SLT helpline at 1212.
+5. If the customer asks in Sinhala or Tamil, respond politely in that language using the provided knowledge.
 
-    New code should use chat.generate_answer() which sends structured
-    SystemMessage + HumanMessage objects instead of a raw concatenated string.
-    """
-    return f"{SYSTEM_PROMPT.format(context=context)}\nConversation history:\n{history}\n\nuser: {message}"
+Official knowledge context:
+{context}
+"""
