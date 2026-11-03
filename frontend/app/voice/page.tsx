@@ -9,14 +9,12 @@ import {
   Mic,
   MicOff,
   PhoneOff,
-  Sparkles,
-  Volume2,
-  VolumeX,
   AlertCircle,
   RotateCcw,
 } from "lucide-react";
-import { useLiveVoiceSession } from "../hooks/useLiveVoiceSession";
-import { TavusAvatarView } from "../components/TavusAvatarView";
+import { useVoiceSession } from "../hooks/useVoiceSession";
+import { AvatarView } from "../components/AvatarView";
+
 
 const LANGUAGES = [
   { code: "EN", label: "English", native: "English" },
@@ -24,7 +22,7 @@ const LANGUAGES = [
   { code: "TA", label: "Tamil", native: "தமிழ்" },
 ];
 
-export default function LiveAvatarVoicePage() {
+export default function VoiceAssistantPage() {
   const [selectedLanguage, setSelectedLanguage] = useState("EN");
   const [langMenuOpen, setLangMenuOpen] = useState(false);
 
@@ -33,36 +31,34 @@ export default function LiveAvatarVoicePage() {
     statusMessage,
     errorMessage,
     isMuted,
+    userTranscript,
     assistantTranscript,
-    sources,
     audioLevel,
-    avatarStatus,
-    avatarError,
-    room,
     startSession,
     endSession,
     toggleMute,
-  } = useLiveVoiceSession({
+  } = useVoiceSession({
     language: selectedLanguage,
   });
 
-  // Automatically start the live voice session upon landing on /voice.
+  // Automatically start voice session on mount
   useEffect(() => {
-    const timer = setTimeout(() => {
-      startSession();
-    }, 400);
-    return () => clearTimeout(timer);
+    startSession();
+    return () => {
+      endSession();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Re-start the session whenever the user switches language.
+  // Restart session when language changes
   const isFirstMount = useRef(true);
   useEffect(() => {
     if (isFirstMount.current) {
       isFirstMount.current = false;
       return;
     }
-    if (state !== "idle") {
+    // Restart whenever the session is active OR in error state (user changed lang to retry).
+    if (state !== "idle" && state !== "connecting") {
       startSession();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -76,17 +72,17 @@ export default function LiveAvatarVoicePage() {
   const getStatusBadge = () => {
     switch (state) {
       case "connecting":
-        return { label: "Connecting...", dotClass: "dot-amber", text: "Connecting" };
+        return { dotClass: "dot-amber", text: "Connecting" };
       case "listening":
-        return { label: isMuted ? "Microphone Muted" : "Listening...", dotClass: isMuted ? "dot-amber" : "dot-cyan", text: isMuted ? "Muted" : "Listening" };
+        return { dotClass: isMuted ? "dot-amber" : "dot-cyan", text: isMuted ? "Muted" : "Listening" };
       case "thinking":
-        return { label: "Searching Knowledge Base...", dotClass: "dot-purple", text: "Thinking" };
+        return { dotClass: "dot-purple", text: "Thinking" };
       case "speaking":
-        return { label: "Speaking...", dotClass: "dot-emerald", text: "Speaking" };
+        return { dotClass: "dot-emerald", text: "Speaking" };
       case "error":
-        return { label: "Connection Error", dotClass: "dot-red", text: "Error" };
+        return { dotClass: "dot-red", text: "Error" };
       default:
-        return { label: "Ready to Connect", dotClass: "dot-gray", text: "Idle" };
+        return { dotClass: "dot-gray", text: "Idle" };
     }
   };
 
@@ -108,12 +104,12 @@ export default function LiveAvatarVoicePage() {
           </Link>
           <div className="brand-badge">
             <Image
-              src="/images/logo.svg"
+              src="/images/emblem.svg"
               alt="SLT-MOBITEL"
               width={96}
               height={34}
               style={{ width: "auto", height: "auto" }}
-              priority
+              
             />
           </div>
         </div>
@@ -159,54 +155,22 @@ export default function LiveAvatarVoicePage() {
       {/* Main Avatar Stage */}
       <main className="live-avatar-stage">
         <div className="avatar-frame-wrap">
-          <div className={`avatar-aura-ring aura-${state}`}>
-            {/* Pulsing visual energy rings */}
-            <div className="aura-pulse-1" style={{ transform: `scale(${1 + audioLevel * 0.25})` }} />
-            <div className="aura-pulse-2" style={{ transform: `scale(${1 + audioLevel * 0.45})` }} />
-
-            <div className="avatar-image-container">
-              {/**
-               * TavusAvatarView replaces the former Live3DAvatar (Three.js geometric avatar).
-               * It subscribes to the "tavus-avatar-agent" participant's video + audio tracks
-               * from the LiveKit room and renders them in a <video> element with synced lips.
-               * When Tavus is not configured, it shows a static portrait fallback.
-               */}
-              <TavusAvatarView
-                room={room}
-                state={state}
-                audioLevel={audioLevel}
-                avatarStatus={avatarStatus}
-                avatarError={avatarError}
-              />
-
-              {/* Holographic state overlay badge */}
-              <div className={`avatar-state-indicator state-${state}`}>
-                {state === "speaking" ? (
-                  <Volume2 size={16} className="state-icon-pulse" />
-                ) : state === "thinking" ? (
-                  <Sparkles size={16} className="state-icon-spin" />
-                ) : state === "listening" ? (
-                  isMuted ? <MicOff size={16} /> : <Mic size={16} className="state-icon-pulse" />
-                ) : (
-                  <VolumeX size={16} />
-                )}
-              </div>
-            </div>
-          </div>
+          {/* Avatar with dynamic aura and state indicator */}
+          <AvatarView state={state} audioLevel={audioLevel} isMuted={isMuted} />
 
           {/* Representative Identity & Title */}
           <div className="avatar-identity">
-            <h2>voice agent</h2>
-            <p>SLT-MOBITEL AI Customer Care Assistant</p>
+            <h2>SLT-MOBITEL AI Voice Assistant</h2>
+            <p>Customer Care Real-Time Voice</p>
           </div>
 
           {/* Soundwave audio visualizer bar */}
           <div className={`soundwave-bar ${state}`}>
-            <span style={{ height: `${Math.max(12, audioLevel * 60)}px` }} />
-            <span style={{ height: `${Math.max(16, audioLevel * 85)}px` }} />
-            <span style={{ height: `${Math.max(22, audioLevel * 100)}px` }} />
-            <span style={{ height: `${Math.max(18, audioLevel * 75)}px` }} />
-            <span style={{ height: `${Math.max(14, audioLevel * 50)}px` }} />
+            <span style={{ height: `${Math.max(10, audioLevel * 55)}px` }} />
+            <span style={{ height: `${Math.max(14, audioLevel * 80)}px` }} />
+            <span style={{ height: `${Math.max(20, audioLevel * 100)}px` }} />
+            <span style={{ height: `${Math.max(16, audioLevel * 70)}px` }} />
+            <span style={{ height: `${Math.max(12, audioLevel * 45)}px` }} />
           </div>
 
           {/* Dynamic Status Message */}
@@ -225,25 +189,28 @@ export default function LiveAvatarVoicePage() {
             </div>
           )}
 
-          {/* Live Subtitle Transcript Banner */}
+          {/* Real-time User Transcript (while user is speaking) */}
+          {userTranscript && (
+            <div className="live-transcript-card" style={{ marginBottom: "12px", borderColor: "rgba(56, 189, 248, 0.4)" }}>
+              <div className="transcript-speaker">
+                <span className="speaker-name" style={{ color: "#38bdf8" }}>You:</span>
+              </div>
+              <div className="transcript-text">
+                <p>{userTranscript}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Assistant Response Subtitle Transcript Card */}
           {assistantTranscript && (
             <div className="live-transcript-card">
               <div className="transcript-speaker">
-                <span className="speaker-name">Voice Agent:</span>
+                <span className="speaker-name">Agent:</span>
               </div>
               <div className="transcript-text">
                 <p>{assistantTranscript}</p>
               </div>
-              {sources.length > 0 && (
-                <div className="transcript-sources">
-                  <span className="sources-label">Verified Knowledge:</span>
-                  {sources.map((src, idx) => (
-                    <span key={idx} className="source-tag">
-                      {src.title}
-                    </span>
-                  ))}
-                </div>
-              )}
+              
             </div>
           )}
         </div>
@@ -278,7 +245,12 @@ export default function LiveAvatarVoicePage() {
             </button>
           ) : (
             /* End Conversation Button */
-            <Link href="/" onClick={endSession} className="control-btn end-btn" title="End conversation and return to chat">
+            <Link
+              href="/"
+              onClick={endSession}
+              className="control-btn end-btn"
+              title="End conversation and return to chat"
+            >
               <PhoneOff size={22} />
               <span>End Conversation</span>
             </Link>
