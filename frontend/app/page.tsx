@@ -243,9 +243,6 @@ export default function Home() {
             </button>
             <div>
               <strong>SLT-MOBITEL AI Assistant</strong>
-              <span>
-                <i /> Online · Ready to assist
-              </span>
             </div>
           </div>
           <div className="topbar-actions">
@@ -254,6 +251,7 @@ export default function Home() {
               className="talk-to-ai-btn"
               title="Start real-time voice conversation with SLT-MOBITEL Live AI Avatar"
               id="talk-to-ai-button"
+              prefetch={true}
             >
               <span className="talk-to-ai-icon">
                 <Mic size={15} />
@@ -284,7 +282,7 @@ export default function Home() {
             {view === "active" ? (
               <ChatWindow messages={messages} loading={loading} />
             ) : (
-              <WelcomeScreen onStart={() => setView("active")} onPrompt={sendMessage} />
+              <WelcomeScreen onPrompt={sendMessage} />
             )}
             <div className="disclaimer">
               SLT-MOBITEL AI Assistant retrieves answers exclusively from official verified engineering &amp;
