@@ -5,6 +5,5 @@ This ensures backward compatibility for commands like:
     uvicorn main:app --reload
 """
 from app.main import app
-from app.api.routes.livekit import LiveKitTokenRequest, LiveKitTokenResponse
 
-__all__ = ["app", "LiveKitTokenRequest", "LiveKitTokenResponse"]
+__all__ = ["app"]
