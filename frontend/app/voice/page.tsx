@@ -178,6 +178,59 @@ export default function VoiceAssistantPage() {
             <span>{statusMessage}</span>
           </div>
 
+          {/* Compact Control Buttons — sit right below status text */}
+          <div className="controls-group">
+            {/* Mute/Unmute Button */}
+            <button
+              type="button"
+              className={`control-btn mute-btn ${isMuted ? "muted" : ""}`}
+              onClick={toggleMute}
+              disabled={state === "idle" || state === "connecting"}
+              title={isMuted ? "Unmute Microphone" : "Mute Microphone"}
+              aria-label={isMuted ? "Unmute Microphone" : "Mute Microphone"}
+            >
+              {isMuted ? <MicOff size={18} /> : <Mic size={18} />}
+              <span>{isMuted ? "Unmute" : "Mute"}</span>
+            </button>
+
+            {/* Start / Stop Buttons — Stop button is ALWAYS available */}
+            {state === "idle" || state === "error" ? (
+              <>
+                <button
+                  type="button"
+                  className="control-btn primary-start-btn"
+                  onClick={startSession}
+                  title="Start Voice Conversation"
+                  aria-label="Start Voice Conversation"
+                >
+                  <Mic size={18} />
+                  <span>Start</span>
+                </button>
+                <Link
+                  href="/"
+                  onClick={endSession}
+                  className="control-btn end-btn"
+                  title="Return to chat"
+                  aria-label="Exit to Chat"
+                >
+                  <PhoneOff size={18} />
+                  <span>Exit</span>
+                </Link>
+              </>
+            ) : (
+              <Link
+                href="/"
+                onClick={endSession}
+                className="control-btn end-btn"
+                title="End conversation and return to chat"
+                aria-label="Stop Conversation"
+              >
+                <PhoneOff size={18} />
+                <span>Stop</span>
+              </Link>
+            )}
+          </div>
+
           {/* Error Message Toast */}
           {errorMessage && (
             <div className="avatar-error-banner">
@@ -189,74 +242,47 @@ export default function VoiceAssistantPage() {
             </div>
           )}
 
-          {/* Real-time User Transcript (while user is speaking) */}
-          {userTranscript && (
-            <div className="live-transcript-card" style={{ marginBottom: "12px", borderColor: "rgba(56, 189, 248, 0.4)" }}>
+          {/* Conversation Transcripts (You & Agent) */}
+          <div className="transcripts-container">
+            {/* You Box */}
+            <div className={`transcript-card user-card ${userTranscript ? "active" : ""}`}>
               <div className="transcript-speaker">
-                <span className="speaker-name" style={{ color: "#38bdf8" }}>You:</span>
+                <span className="speaker-dot" />
+                <span className="speaker-name">You</span>
               </div>
               <div className="transcript-text">
-                <p>{userTranscript}</p>
+                <p>
+                  {userTranscript ||
+                    (state === "listening"
+                      ? "Listening to your voice..."
+                      : "Your voice will appear here...")}
+                </p>
               </div>
             </div>
-          )}
 
-          {/* Assistant Response Subtitle Transcript Card */}
-          {assistantTranscript && (
-            <div className="live-transcript-card">
+            {/* Agent Box */}
+            <div className={`transcript-card agent-card ${assistantTranscript ? "active" : ""}`}>
               <div className="transcript-speaker">
-                <span className="speaker-name">Agent:</span>
+                <span className="speaker-dot" />
+                <span className="speaker-name">Agent</span>
               </div>
               <div className="transcript-text">
-                <p>{assistantTranscript}</p>
+                <p>
+                  {assistantTranscript ||
+                    (state === "speaking"
+                      ? "Assistant is responding..."
+                      : state === "thinking"
+                      ? "Assistant is preparing an answer..."
+                      : "Assistant response will appear here...")}
+                </p>
               </div>
-              
             </div>
-          )}
+          </div>
         </div>
       </main>
 
-      {/* Bottom Controls Bar */}
-      <footer className="live-avatar-footer">
-        <div className="controls-group">
-          {/* Mute/Unmute Button */}
-          <button
-            type="button"
-            className={`control-btn mute-btn ${isMuted ? "muted" : ""}`}
-            onClick={toggleMute}
-            disabled={state === "idle" || state === "connecting"}
-            title={isMuted ? "Unmute Microphone" : "Mute Microphone"}
-            aria-label={isMuted ? "Unmute Microphone" : "Mute Microphone"}
-          >
-            {isMuted ? <MicOff size={22} /> : <Mic size={22} />}
-            <span>{isMuted ? "Unmute" : "Mute"}</span>
-          </button>
-
-          {/* Main Action / Reconnect Button */}
-          {state === "idle" || state === "error" ? (
-            <button
-              type="button"
-              className="control-btn primary-start-btn"
-              onClick={startSession}
-              title="Start Voice Conversation"
-            >
-              <Mic size={24} />
-              <span>Start Conversation</span>
-            </button>
-          ) : (
-            /* End Conversation Button */
-            <Link
-              href="/"
-              onClick={endSession}
-              className="control-btn end-btn"
-              title="End conversation and return to chat"
-            >
-              <PhoneOff size={22} />
-              <span>End Conversation</span>
-            </Link>
-          )}
-        </div>
-      </footer>
+      {/* Footer — kept for layout spacing only */}
+      <footer className="live-avatar-footer" />
     </div>
   );
 }
