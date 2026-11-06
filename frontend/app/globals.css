@@ -24,8 +24,8 @@ button { cursor: pointer; }
 .new-chat:hover, .send-button:hover, .security-strip button:hover { background: var(--navy); }
 kbd { display: none; }
 .recent-heading { align-items: center; color: var(--green); display: flex; font-size: 10px; font-weight: 700; justify-content: space-between; letter-spacing: .08em; margin: 1px 4px 0; text-transform: uppercase; }
-.recent-list { display: flex; flex-direction: column; gap: 2px; margin-top: 2px; }
-.recent-chat, .sidebar-bottom button { background: transparent; border: 0; color: var(--muted); gap: 7px; padding: 5px 8px; text-align: left; width: 100%; font-size: 11.5px; }
+.recent-list { display: flex; flex-direction: column; gap: 2px; margin-top: 1px; }
+.recent-chat, .sidebar-bottom button { background: transparent; border: 0; color: var(--muted); gap: 5px; padding: 5px 8px; text-align: left; width: 100%; font-size: 11.5px; }
 .recent-chat { justify-content: space-between; padding: 2px 4px 2px 8px; border-radius: 5px; }
 .recent-chat-open { background: transparent; border: 0; color: inherit; min-width: 0; overflow: hidden; padding: 4px 0; text-align: left; text-overflow: ellipsis; white-space: nowrap; font-size: 11.5px; }
 .recent-chat-delete { align-items: center; background: transparent; border: 0; color: var(--muted); display: flex; flex-shrink: 0; justify-content: center; opacity: 0; padding: 4px; }
@@ -209,10 +209,13 @@ code { background: var(--pale, #e1eaf4); border-radius: 4px; color: var(--blue);
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  min-height: 100dvh;
   width: 100vw;
   background: radial-gradient(circle at 50% 25%, #071936 0%, #040b17 100%);
   color: #f1f5f9;
   overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   font-family: inherit;
   user-select: none;
 }
@@ -459,8 +462,8 @@ code { background: var(--pale, #e1eaf4); border-radius: 4px; color: var(--blue);
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 30px 20px;
+  justify-content: flex-start;
+  padding: 24px 20px 48px;
   max-width: 850px;
   margin: 0 auto;
   width: 100%;
@@ -477,13 +480,13 @@ code { background: var(--pale, #e1eaf4); border-radius: 4px; color: var(--blue);
 /* Pulsing Avatar Aura Ring */
 .avatar-aura-ring {
   position: relative;
-  width: 250px;
-  height: 250px;
+  width: 210px;
+  height: 210px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .aura-pulse-1,
@@ -543,8 +546,8 @@ code { background: var(--pale, #e1eaf4); border-radius: 4px; color: var(--blue);
 
 .avatar-image-container {
   position: relative;
-  width: 230px;
-  height: 230px;
+  width: 190px;
+  height: 190px;
   border-radius: 50%;
   overflow: hidden;
   border: 3px solid rgba(255, 255, 255, 0.2);
@@ -757,83 +760,178 @@ code { background: var(--pale, #e1eaf4); border-radius: 4px; color: var(--blue);
 /* ========================================================
    BOTTOM CONTROLS FOOTER
    ======================================================== */
+
+/* Footer is now just a spacer — buttons live inside the main stage */
 .live-avatar-footer {
   position: relative;
   z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px 32px 32px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(4, 11, 23, 0.65);
-  backdrop-filter: blur(12px);
+  height: 0;
+  overflow: hidden;
+  padding: 0;
+  border: none;
 }
 
+/* Button row rendered inline, below the soundwave */
 .controls-group {
   display: flex;
   align-items: center;
-  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 16px 0 22px;
+  z-index: 10;
 }
 
+/* Compact, compatible pill buttons with clear icons and labels */
 .control-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  padding: 12px 24px;
-  border-radius: 99px;
-  font-size: 14px;
+  padding: 10px 22px;
+  border-radius: 999px;
+  font-size: 13.5px;
   font-weight: 700;
   cursor: pointer;
-  border: 0;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid transparent;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   text-decoration: none;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  user-select: none;
+}
+
+.control-btn span {
+  display: inline;
+  white-space: nowrap;
 }
 
 .mute-btn {
-  background: rgba(255, 255, 255, 0.1);
-  color: #e2e8f0;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.12);
+  color: #f1f5f9;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(8px);
 }
 
 .mute-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.4);
   color: #ffffff;
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
 .mute-btn.muted {
-  background: rgba(239, 68, 68, 0.2);
-  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.25);
+  border-color: rgba(239, 68, 68, 0.6);
   color: #fca5a5;
 }
 
 .mute-btn:disabled {
-  opacity: 0.4;
+  opacity: 0.55;
   cursor: not-allowed;
 }
 
 .primary-start-btn {
   background: linear-gradient(135deg, #0056a2 0%, #009647 100%);
   color: #ffffff;
-  box-shadow: 0 6px 20px rgba(0, 86, 162, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 4px 18px rgba(0, 86, 162, 0.5);
 }
 
 .primary-start-btn:hover {
   background: linear-gradient(135deg, #004482 0%, #00803c 100%);
-  box-shadow: 0 8px 25px rgba(0, 86, 162, 0.55);
-  transform: translateY(-2px);
+  box-shadow: 0 6px 22px rgba(0, 86, 162, 0.65);
+  transform: translateY(-1px);
 }
 
 .end-btn {
   background: #dc2626;
   color: #ffffff;
-  box-shadow: 0 4px 18px rgba(220, 38, 38, 0.35);
+  border: 1px solid rgba(239, 68, 68, 0.6);
+  box-shadow: 0 4px 18px rgba(220, 38, 38, 0.45);
 }
 
 .end-btn:hover {
   background: #b91c1c;
-  box-shadow: 0 6px 24px rgba(220, 38, 38, 0.5);
-  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(220, 38, 38, 0.6);
+  transform: translateY(-1px);
+}
+
+/* Transcripts container for You & Agent */
+.transcripts-container {
+  width: 100%;
+  max-width: 620px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.transcript-card {
+  width: 100%;
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 12px 18px;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.transcript-card.user-card {
+  border-left: 3px solid #38bdf8;
+}
+
+.transcript-card.agent-card {
+  border-left: 3px solid #34d399;
+}
+
+.transcript-card.active {
+  border-color: rgba(56, 189, 248, 0.4);
+  background: rgba(15, 23, 42, 0.85);
+}
+
+.transcript-card.agent-card.active {
+  border-color: rgba(52, 211, 153, 0.4);
+}
+
+.transcript-speaker {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+.user-card .transcript-speaker {
+  color: #38bdf8;
+}
+
+.agent-card .transcript-speaker {
+  color: #34d399;
+}
+
+.speaker-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.transcript-text p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #f1f5f9;
+}
+
+.transcript-card:not(.active) .transcript-text p {
+  color: #64748b;
+  font-style: italic;
+  font-size: 13px;
 }
 
 /* ========================================================
@@ -868,11 +966,8 @@ code { background: var(--pale, #e1eaf4); border-radius: 4px; color: var(--blue);
   .transcript-text p {
     font-size: 13.5px;
   }
-  .live-avatar-footer {
-    padding: 16px 20px 24px;
-  }
   .control-btn {
-    padding: 10px 18px;
+    padding: 8px 18px;
     font-size: 13px;
   }
 }
@@ -901,8 +996,12 @@ code { background: var(--pale, #e1eaf4); border-radius: 4px; color: var(--blue);
     font-size: 13px;
   }
   .controls-group {
-    width: 100%;
-    justify-content: center;
+    gap: 14px;
+  }
+  .control-btn {
+    padding: 8px 16px;
+    font-size: 12.5px;
+    gap: 6px;
   }
 }
 
