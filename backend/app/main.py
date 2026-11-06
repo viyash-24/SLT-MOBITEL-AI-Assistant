@@ -21,7 +21,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes.chat import chat_router
 from app.api.routes.health import health_router
 from app.api.routes.knowledge import knowledge_router
-from app.api.routes.livekit import livekit_router
+from app.api.routes.voice_live import voice_live_router
 from app.dependencies import get_assistant_service
 from config import get_settings
 from rag import KNOWLEDGE_BASE, get_rag_service
@@ -34,7 +34,7 @@ app = FastAPI(
     title="SLT-MOBITEL AI Assistant API",
     version="2.0.0",
     description=(
-        "Clean Architecture refactor. Text chat and voice agent share the same "
+        "Clean Architecture refactor. Text chat and voice assistant share the same "
         "AssistantService → VectorStore → LLM pipeline."
     ),
 )
@@ -50,5 +50,20 @@ app.add_middleware(
 # Register routers (each is a thin factory wrapping its handler)
 app.include_router(chat_router(_assistant))
 app.include_router(health_router(settings, _rag, len(KNOWLEDGE_BASE)))
-app.include_router(livekit_router(settings))
 app.include_router(knowledge_router(_rag))
+app.include_router(voice_live_router(_assistant, settings))
+
+
+# Compatibility fallback for any stale browser tabs requesting the legacy LiveKit token
+@app.api_route("/api/livekit/token", methods=["GET", "POST", "OPTIONS"])
+def livekit_token_deprecated() -> dict[str, str]:
+    return {
+        "status": "upgraded",
+        "message": (
+            "LiveKit has been completely replaced by Google Gemini Live API. "
+            "Please refresh your browser tab at http://localhost:3000/voice to connect directly via WebSocket."
+        ),
+        "websocket_url": "/api/voice/live",
+        "token": "livekit-deprecated-use-gemini-live-api",
+    }
+
