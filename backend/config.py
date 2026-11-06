@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     database_url: str = ""
     cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
     gemini_model: str = "gemini-2.5-flash-lite"
-    gemini_live_model: str = "gemini-2.5-flash-native-audio-latest"
+    gemini_live_model: str = "gemini-3.1-flash-live-preview"
     gemini_embedding_model: str = "models/gemini-embedding-001"
     pgvector_collection: str = "slt_mobitel_knowledge"
 
