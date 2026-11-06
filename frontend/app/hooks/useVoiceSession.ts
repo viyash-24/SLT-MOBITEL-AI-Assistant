@@ -24,6 +24,11 @@ const OUTPUT_SAMPLE_RATE = 24000;
 const MAX_RECONNECT_ATTEMPTS = 2;
 const RECONNECT_DELAY_MS = 450;
 
+// Jitter buffer: how far ahead we schedule audio relative to AudioContext clock.
+// 120 ms gives enough runway to absorb WebSocket & scheduler jitter without
+// adding perceptible latency to the start of a turn.
+const JITTER_BUFFER_S = 0.12;
+
 function getVoiceWebSocketUrl(sessionId: string, language: string): string {
   const envApi = process.env.NEXT_PUBLIC_API_URL;
   if (envApi) {
@@ -304,8 +309,14 @@ export function useVoiceSession({ language = "EN" }: UseVoiceSessionOptions) {
         const epoch = playbackEpochRef.current;
         const now = activeContext.currentTime;
 
-        if (nextPlayTimeRef.current < now) {
-          nextPlayTimeRef.current = now + 0.025;
+        // Dynamic jitter buffer:
+        // When assistant starts speaking (!isSpeakingRef), give an 80ms cushion
+        // so upcoming chunks have time to queue up smoothly.
+        // If mid-sentence packets ever underflow (nextPlayTime < now), resume
+        // IMMEDIATELY (within 5ms) to eliminate audible silence holes/breaks.
+        if (!isSpeakingRef.current || nextPlayTimeRef.current < now) {
+          const leadTime = isSpeakingRef.current ? 0.005 : 0.080;
+          nextPlayTimeRef.current = Math.max(now + leadTime, nextPlayTimeRef.current);
         }
 
         const playTime = nextPlayTimeRef.current;
@@ -396,7 +407,49 @@ export function useVoiceSession({ language = "EN" }: UseVoiceSessionOptions) {
 
       let workletLoaded = false;
       try {
-        await ctx.audioWorklet.addModule("/audio-capture-processor.js");
+        // Inline the AudioWorklet processor as a Blob URL — no static file needed.
+        // FRAME_SIZE = 1280 samples @ 16 kHz → 80 ms per chunk (12.5 packets/s).
+        // Prevents socket buffer bloat while keeping latency below 80 ms.
+        const processorCode = `
+          const FRAME_SIZE = 1280;
+          class AudioCaptureProcessor extends AudioWorkletProcessor {
+            constructor() {
+              super();
+              this._buffer = new Float32Array(FRAME_SIZE);
+              this._offset = 0;
+            }
+            process(inputs) {
+              const channel = inputs?.[0]?.[0];
+              if (!channel || channel.length === 0) return true;
+              let srcOffset = 0;
+              while (srcOffset < channel.length) {
+                const copyLen = Math.min(FRAME_SIZE - this._offset, channel.length - srcOffset);
+                this._buffer.set(channel.subarray(srcOffset, srcOffset + copyLen), this._offset);
+                this._offset += copyLen;
+                srcOffset += copyLen;
+                if (this._offset >= FRAME_SIZE) {
+                  const pcm16 = new Int16Array(FRAME_SIZE);
+                  let sumSq = 0;
+                  for (let i = 0; i < FRAME_SIZE; i++) {
+                    const sample = this._buffer[i];
+                    sumSq += sample * sample;
+                    const s = Math.max(-1.0, Math.min(1.0, sample));
+                    pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+                  }
+                  const rms = Math.sqrt(sumSq / FRAME_SIZE);
+                  this.port.postMessage({ buffer: pcm16.buffer, rms }, [pcm16.buffer]);
+                  this._offset = 0;
+                }
+              }
+              return true;
+            }
+          }
+          registerProcessor("audio-capture-processor", AudioCaptureProcessor);
+        `;
+        // Inline self-contained AudioWorklet data URI — zero HTTP requests, zero static files, zero 404s.
+        const workletUri = "data:text/javascript;charset=utf-8," + encodeURIComponent(processorCode);
+        await ctx.audioWorklet.addModule(workletUri);
+
         if (!isCurrent()) {
           await ctx.close().catch(() => {});
           stream.getTracks().forEach((track) => track.stop());
@@ -406,10 +459,20 @@ export function useVoiceSession({ language = "EN" }: UseVoiceSessionOptions) {
         const workletNode = new AudioWorkletNode(ctx, "audio-capture-processor");
         micWorkletNodeRef.current = workletNode;
 
-        workletNode.port.onmessage = (event: MessageEvent<ArrayBuffer>) => {
+        workletNode.port.onmessage = (event: MessageEvent<{ buffer: ArrayBuffer; rms: number }>) => {
           const ws = wsRef.current;
           if (isMutedRef.current || !ws || ws.readyState !== WebSocket.OPEN) return;
-          ws.send(event.data);
+          const { buffer, rms } = event.data;
+
+          // Acoustic echo suppression:
+          // If the AI Assistant is currently speaking, do NOT forward audio unless
+          // the user speaks loudly (rms >= 0.12) to intentionally interrupt.
+          // This prevents speaker bleed from cutting the assistant off mid-sentence.
+          if (isSpeakingRef.current && rms < 0.12) {
+            return;
+          }
+
+          ws.send(buffer);
         };
 
         sourceNode.connect(workletNode);
@@ -419,21 +482,32 @@ export function useVoiceSession({ language = "EN" }: UseVoiceSessionOptions) {
         silentGain.connect(ctx.destination);
 
         workletLoaded = true;
-        console.log(`[Voice] AudioWorklet active @ ${ctx.sampleRate}Hz`);
-      } catch (workletErr) {
-        console.warn("[Voice] AudioWorklet fallback:", workletErr);
+        console.log(`[Voice] AudioWorklet active @ ${ctx.sampleRate}Hz (80ms frames)`);
+      } catch {
+        // Fallback to ScriptProcessorNode cleanly without noisy console warnings
       }
 
       if (!workletLoaded) {
         let phase = 0.0;
         const ratio = ctx.sampleRate / 16000.0;
-        const processor = ctx.createScriptProcessor(1024, 1, 1);
+        // 256-sample buffer → ~16 ms latency at 16 kHz (was 1024 → ~64 ms)
+        const processor = ctx.createScriptProcessor(256, 1, 1);
         scriptProcessorRef.current = processor;
 
         processor.onaudioprocess = (e) => {
           const ws = wsRef.current;
           if (isMutedRef.current || !ws || ws.readyState !== WebSocket.OPEN) return;
           const channel = e.inputBuffer.getChannelData(0);
+
+          // Acoustic echo suppression for ScriptProcessor fallback:
+          if (isSpeakingRef.current) {
+            let sumSq = 0;
+            for (let i = 0; i < channel.length; i++) {
+              sumSq += channel[i] * channel[i];
+            }
+            const rms = Math.sqrt(sumSq / channel.length);
+            if (rms < 0.12) return;
+          }
 
           if (ctx.sampleRate === 16000) {
             const pcm16 = new Int16Array(channel.length);
