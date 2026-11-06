@@ -1,13 +1,13 @@
 """Shared AssistantService — the core application service.
 
-This is the single entry point for both the text chatbot (via HTTP) and
-the LiveKit voice agent.  It orchestrates:
+This is the single entry point for both the text chatbot and the voice agent.
+It orchestrates:
 
   1. Input validation and session ID assignment.
   2. Knowledge-base retrieval via VectorStorePort.
   3. Context assembly and history formatting.
   4. Grounding policy check (fallback if no documents found).
-  5. LLM answer generation via LLMPort.
+  5. LLM answer generation via LLMPort (with channel-specific formatting).
   6. Persistence via ChatRepositoryPort.
   7. Response assembly with sources and confidence.
 
@@ -15,13 +15,6 @@ Dependencies (injected at construction time):
   - llm          : LLMPort — generates the answer.
   - vector_store : VectorStorePort — retrieves knowledge documents.
   - repository   : ChatRepositoryPort — persists exchanges.
-
-Neither FastAPI, LangChain, LiveKit SDK, nor any provider SDK is imported
-here.  The application layer depends only on:
-  - domain models   (app.domain.models.chat)
-  - domain policies (app.domain.policies.grounding_policy)
-  - domain errors   (app.domain.exceptions.assistant_exceptions)
-  - port protocols  (app.application.ports.*)
 """
 from __future__ import annotations
 
@@ -46,8 +39,8 @@ class AssistantService:
 
     Strategy pattern:
       The *channel* field on AssistantRequest acts as the strategy selector.
-      Text channel: returns full AssistantResponse with sources + confidence.
-      Voice channel: same code path, caller uses only the .answer field.
+      Text channel: returns full AssistantResponse with formatted markdown text.
+      Voice channel: returns concise, conversational responses formatted for spoken playback.
     """
 
     def __init__(
@@ -59,17 +52,14 @@ class AssistantService:
         self._llm = llm
         self._vector_store = vector_store
         self._repository = repository
+        self._context_cache: dict[tuple[str, int], tuple[str, list[SourceReference]]] = {}
 
     # ── Public API ──────────────────────────────────────────────────────────
 
     def answer(self, request: AssistantRequest) -> AssistantResponse:
         """Produce a grounded answer for the given request.
 
-        Called by:
-          - The text chat HTTP route (channel="text")
-          - The LiveKit voice agent's knowledge tool (channel="voice")
-
-        Both paths run the same retrieval → grounding → LLM → save pipeline.
+        Both text and voice channels run the same retrieval → grounding → LLM → save pipeline.
         """
         session_id = request.session_id or str(uuid4())
 
@@ -97,7 +87,10 @@ class AssistantService:
 
         # ── Step 5: generate answer ───────────────────────────────────────────
         try:
-            answer = self._llm.generate(context, history, request.message)
+            try:
+                answer = self._llm.generate(context, history, request.message, channel=request.channel)
+            except TypeError:
+                answer = self._llm.generate(context, history, request.message)
         except (ConfigurationError, ProviderError):
             raise
         except Exception as exc:
@@ -126,29 +119,29 @@ class AssistantService:
         )
 
     def retrieve_context(self, query: str, k: int = 3) -> tuple[str, list[SourceReference]]:
-        """Return formatted plain-text context string and source references.
+        """Return formatted plain-text context string and source references."""
+        cache_key = (query.strip().lower(), k)
+        cached = self._context_cache.get(cache_key)
+        if cached is not None:
+            return cached
 
-        Called by the LiveKit voice agent tool. Returns both the formatted
-        context for Gemini Live and the deduplicated source list for frontend
-        event publishing in a single retrieval call.
-        """
         documents = self._vector_store.search(query, k=k)
         if not documents:
-            return (
+            result = (
                 "No verified matching information was found in the SLT-MOBITEL "
                 "knowledge base. Advise the customer to call the SLT helpline at 1212.",
                 [],
             )
-        return self._build_context(documents), self._collect_sources(documents)
+        else:
+            result = (self._build_context(documents), self._collect_sources(documents))
+
+        if len(self._context_cache) >= 48:
+            self._context_cache.pop(next(iter(self._context_cache)))
+        self._context_cache[cache_key] = result
+        return result
 
     def retrieve_context_text(self, query: str, k: int = 3) -> str:
-        """Return a plain-text context string for the voice agent's tool call.
-
-        The voice agent passes this to Gemini Live's instructions so it can
-        answer grounded in SLT-MOBITEL knowledge. Intentionally lightweight —
-        no LLM call, no persistence — voice uses the existing Gemini Live
-        session's LLM.
-        """
+        """Return a plain-text context string for knowledge queries."""
         context_text, _ = self.retrieve_context(query, k=k)
         return context_text
 
