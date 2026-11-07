@@ -857,6 +857,32 @@ code { background: var(--pale, #e1eaf4); border-radius: 4px; color: var(--blue);
   transform: translateY(-1px);
 }
 
+.interrupt-btn {
+  background: rgba(245, 158, 11, 0.22);
+  color: #fef3c7;
+  border: 1px solid rgba(245, 158, 11, 0.55);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
+  animation: pulse-interrupt 2s infinite ease-in-out;
+}
+
+.interrupt-btn:hover {
+  background: rgba(245, 158, 11, 0.38);
+  border-color: rgba(245, 158, 11, 0.85);
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.45);
+}
+
+@keyframes pulse-interrupt {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(245, 158, 11, 0);
+  }
+}
+
 /* Transcripts container for You & Agent */
 .transcripts-container {
   width: 100%;
