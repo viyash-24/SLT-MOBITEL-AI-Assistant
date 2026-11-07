@@ -23,23 +23,38 @@ class PGVectorAdapter:
         # cached PGVector connection.
         self._rag = rag_service
         self._vector_enabled = True
+        self._search_cache: dict[tuple[str, int], list] = {}
 
     def search(self, query: str, k: int = 5) -> list:
         """Search the vector store; fall back to keyword search on failure.
 
         Always returns a list (possibly empty).  Never raises.
         """
+        cache_key = (query.strip().lower(), k)
+        cached = self._search_cache.get(cache_key)
+        if cached is not None:
+            return cached
+
+        documents: list = []
+        used_vector = False
         if self._vector_enabled:
             try:
-                return self._rag._vector_store().similarity_search(query, k=k)
+                documents = self._rag._vector_store().similarity_search(query, k=k)
+                used_vector = True
             except Exception as exc:
                 self._vector_enabled = False
                 logger.info(
                     "PGVector unavailable (%s). Switched to keyword fallback.", exc
                 )
 
-        try:
-            return self._rag._fallback_search(query, k=k)
-        except Exception as fallback_exc:
-            logger.error("PGVectorAdapter: keyword fallback also failed: %s", fallback_exc)
-            return []
+        if not used_vector:
+            try:
+                documents = self._rag._fallback_search(query, k=k)
+            except Exception as fallback_exc:
+                logger.error("PGVectorAdapter: keyword fallback also failed: %s", fallback_exc)
+                documents = []
+
+        if len(self._search_cache) >= 64:
+            self._search_cache.pop(next(iter(self._search_cache)))
+        self._search_cache[cache_key] = documents
+        return documents
