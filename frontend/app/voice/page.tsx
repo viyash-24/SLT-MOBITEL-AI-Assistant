@@ -11,6 +11,7 @@ import {
   PhoneOff,
   AlertCircle,
   RotateCcw,
+  Square,
 } from "lucide-react";
 import { useVoiceSession } from "../hooks/useVoiceSession";
 import { AvatarView } from "../components/AvatarView";
@@ -37,6 +38,7 @@ export default function VoiceAssistantPage() {
     startSession,
     endSession,
     toggleMute,
+    interrupt,
   } = useVoiceSession({
     language: selectedLanguage,
   });
@@ -192,6 +194,20 @@ export default function VoiceAssistantPage() {
               {isMuted ? <MicOff size={18} /> : <Mic size={18} />}
               <span>{isMuted ? "Unmute" : "Mute"}</span>
             </button>
+
+            {/* Interrupt Assistant Button (shown when Assistant is actively speaking) */}
+            {state === "speaking" && (
+              <button
+                type="button"
+                className="control-btn interrupt-btn"
+                onClick={interrupt}
+                title="Interrupt Assistant and speak"
+                aria-label="Interrupt Assistant"
+              >
+                <Square size={16} />
+                <span>Interrupt</span>
+              </button>
+            )}
 
             {/* Start / Stop Buttons — Stop button is ALWAYS available */}
             {state === "idle" || state === "error" ? (
