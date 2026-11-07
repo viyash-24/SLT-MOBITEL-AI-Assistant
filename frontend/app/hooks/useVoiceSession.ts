@@ -25,9 +25,9 @@ const MAX_RECONNECT_ATTEMPTS = 2;
 const RECONNECT_DELAY_MS = 450;
 
 // Jitter buffer: how far ahead we schedule audio relative to AudioContext clock.
-// 120 ms gives enough runway to absorb WebSocket & scheduler jitter without
-// adding perceptible latency to the start of a turn.
-const JITTER_BUFFER_S = 0.12;
+// 120 ms provides a solid runway that absorbs WebSocket network packet jitter
+// without dropping or skipping samples, completely eliminating stutter and breaking.
+const JITTER_BUFFER_SECONDS = 0.12;
 
 function getVoiceWebSocketUrl(sessionId: string, language: string): string {
   const envApi = process.env.NEXT_PUBLIC_API_URL;
@@ -105,11 +105,33 @@ export function useVoiceSession({ language = "EN" }: UseVoiceSessionOptions) {
   const terminalErrorRef = useRef(false);
   const microphoneErrorRef = useRef(false);
 
+  const pcmRemainderRef = useRef<Uint8Array | null>(null);
+  const turnCompleteReceivedRef = useRef(true);
+  const turnScheduledEndTimeRef = useRef(0);
+  const bargeInFramesRef = useRef(0);
+
   const animFrameRef = useRef<number | null>(null);
   const isSpeakingRef = useRef(false);
+  const isGreetingActiveRef = useRef(true);
   const lastLevelRef = useRef(0);
   const lastVisualizerUpdateRef = useRef(0);
   const scheduleReconnectRef = useRef<(generation: number) => void>(() => {});
+
+  useEffect(() => {
+    const unlockAudio = () => {
+      if (playbackContextRef.current?.state === "suspended") {
+        playbackContextRef.current.resume().catch(() => {});
+      }
+    };
+    window.addEventListener("click", unlockAudio);
+    window.addEventListener("keydown", unlockAudio);
+    window.addEventListener("touchstart", unlockAudio);
+    return () => {
+      window.removeEventListener("click", unlockAudio);
+      window.removeEventListener("keydown", unlockAudio);
+      window.removeEventListener("touchstart", unlockAudio);
+    };
+  }, []);
 
   useEffect(() => {
     isMutedRef.current = isMuted;
@@ -128,6 +150,9 @@ export function useVoiceSession({ language = "EN" }: UseVoiceSessionOptions) {
 
   const stopAllPlayback = useCallback(() => {
     playbackEpochRef.current += 1;
+    pcmRemainderRef.current = null;
+    turnScheduledEndTimeRef.current = 0;
+    turnCompleteReceivedRef.current = true;
     for (const source of activeSourcesSetRef.current) {
       try {
         source.onended = null;
@@ -139,6 +164,7 @@ export function useVoiceSession({ language = "EN" }: UseVoiceSessionOptions) {
     }
     activeSourcesSetRef.current.clear();
     isSpeakingRef.current = false;
+    isGreetingActiveRef.current = false;
     if (playbackContextRef.current) {
       nextPlayTimeRef.current = playbackContextRef.current.currentTime;
     } else {
@@ -295,9 +321,38 @@ export function useVoiceSession({ language = "EN" }: UseVoiceSessionOptions) {
           activeContext.resume().catch(() => {});
         }
 
-        const float32 = pcm16ToFloat32(pcmBuffer);
-        if (!float32 || float32.length === 0) return;
+        // 1. Handle byte alignment across WebSocket message boundaries
+        let bytes = new Uint8Array(pcmBuffer);
+        if (pcmRemainderRef.current && pcmRemainderRef.current.length > 0) {
+          const merged = new Uint8Array(pcmRemainderRef.current.length + bytes.length);
+          merged.set(pcmRemainderRef.current, 0);
+          merged.set(bytes, pcmRemainderRef.current.length);
+          bytes = merged;
+          pcmRemainderRef.current = null;
+        }
 
+        if (bytes.length % 2 !== 0) {
+          pcmRemainderRef.current = bytes.slice(bytes.length - 1);
+          bytes = bytes.subarray(0, bytes.length - 1);
+        }
+
+        if (bytes.length < 2) return;
+
+        // 2. Convert 16-bit PCM to Float32 [-1.0, 1.0]
+        let int16Samples: Int16Array;
+        if (bytes.byteOffset % 2 === 0) {
+          int16Samples = new Int16Array(bytes.buffer, bytes.byteOffset, bytes.length / 2);
+        } else {
+          const aligned = bytes.slice().buffer;
+          int16Samples = new Int16Array(aligned, 0, bytes.length / 2);
+        }
+        const float32 = new Float32Array(int16Samples.length);
+        for (let i = 0; i < int16Samples.length; i++) {
+          float32[i] = int16Samples[i] / 32768.0;
+        }
+        if (float32.length === 0) return;
+
+        // 3. Create Web Audio buffer at exact 24,000 Hz
         const audioBuffer = activeContext.createBuffer(1, float32.length, OUTPUT_SAMPLE_RATE);
         audioBuffer.getChannelData(0).set(float32);
 
@@ -309,19 +364,20 @@ export function useVoiceSession({ language = "EN" }: UseVoiceSessionOptions) {
         const epoch = playbackEpochRef.current;
         const now = activeContext.currentTime;
 
-        // Dynamic jitter buffer:
-        // When assistant starts speaking (!isSpeakingRef), give an 80ms cushion
-        // so upcoming chunks have time to queue up smoothly.
-        // If mid-sentence packets ever underflow (nextPlayTime < now), resume
-        // IMMEDIATELY (within 5ms) to eliminate audible silence holes/breaks.
+        // 4. Seamless timeline scheduling without breaking:
+        // If playback is not yet active or if the queue has underrun (nextPlayTime < now),
+        // give a gentle 50ms initial runway ahead of the audio hardware clock.
+        // If queue is already running and in the future (nextPlayTime >= now),
+        // schedule the next chunk EXACTLY at nextPlayTime for 100% gapless, seamless audio.
         if (!isSpeakingRef.current || nextPlayTimeRef.current < now) {
-          const leadTime = isSpeakingRef.current ? 0.005 : 0.080;
-          nextPlayTimeRef.current = Math.max(now + leadTime, nextPlayTimeRef.current);
+          nextPlayTimeRef.current = now + 0.05;
         }
 
         const playTime = nextPlayTimeRef.current;
         source.start(playTime);
         nextPlayTimeRef.current += audioBuffer.duration;
+        turnScheduledEndTimeRef.current = nextPlayTimeRef.current;
+        turnCompleteReceivedRef.current = false;
         turnCompleteRef.current = false;
 
         if (!isSpeakingRef.current) {
@@ -335,10 +391,17 @@ export function useVoiceSession({ language = "EN" }: UseVoiceSessionOptions) {
         source.onended = () => {
           if (epoch !== playbackEpochRef.current) return;
           activeSourcesSetRef.current.delete(source);
-          if (activeSourcesSetRef.current.size === 0 && turnCompleteRef.current) {
-            isSpeakingRef.current = false;
-            setState("listening");
-            setStatusMessage("Listening to you...");
+
+          // Only return to listening if the backend marked turn complete
+          // AND all audio buffers have finished playing through the speakers
+          if (activeSourcesSetRef.current.size === 0 && turnCompleteReceivedRef.current) {
+            const currentAudioTime = activeContext.currentTime;
+            if (currentAudioTime >= turnScheduledEndTimeRef.current - 0.05) {
+              isGreetingActiveRef.current = false;
+              isSpeakingRef.current = false;
+              setState("listening");
+              setStatusMessage("Listening to you...");
+            }
           }
         };
       } catch (err) {
@@ -407,41 +470,68 @@ export function useVoiceSession({ language = "EN" }: UseVoiceSessionOptions) {
 
       let workletLoaded = false;
       try {
-        // Inline the AudioWorklet processor as a Blob URL — no static file needed.
-        // FRAME_SIZE = 1280 samples @ 16 kHz → 80 ms per chunk (12.5 packets/s).
-        // Prevents socket buffer bloat while keeping latency below 80 ms.
+        // Inline phase-continuous AudioWorklet processor:
+        // Automatically resamples from any browser sample rate (44.1kHz, 48kHz, etc.)
+        // down to exact 16,000 Hz PCM16 with 1280-sample frames (80ms per packet).
         const processorCode = `
+          const TARGET_SAMPLE_RATE = 16000;
           const FRAME_SIZE = 1280;
+
           class AudioCaptureProcessor extends AudioWorkletProcessor {
             constructor() {
               super();
               this._buffer = new Float32Array(FRAME_SIZE);
               this._offset = 0;
+              this._phase = 0.0;
             }
+
             process(inputs) {
               const channel = inputs?.[0]?.[0];
               if (!channel || channel.length === 0) return true;
-              let srcOffset = 0;
-              while (srcOffset < channel.length) {
-                const copyLen = Math.min(FRAME_SIZE - this._offset, channel.length - srcOffset);
-                this._buffer.set(channel.subarray(srcOffset, srcOffset + copyLen), this._offset);
-                this._offset += copyLen;
-                srcOffset += copyLen;
-                if (this._offset >= FRAME_SIZE) {
-                  const pcm16 = new Int16Array(FRAME_SIZE);
-                  let sumSq = 0;
-                  for (let i = 0; i < FRAME_SIZE; i++) {
-                    const sample = this._buffer[i];
-                    sumSq += sample * sample;
-                    const s = Math.max(-1.0, Math.min(1.0, sample));
-                    pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+
+              const inRate = sampleRate;
+              if (inRate === TARGET_SAMPLE_RATE) {
+                let srcOffset = 0;
+                while (srcOffset < channel.length) {
+                  const copyLen = Math.min(FRAME_SIZE - this._offset, channel.length - srcOffset);
+                  this._buffer.set(channel.subarray(srcOffset, srcOffset + copyLen), this._offset);
+                  this._offset += copyLen;
+                  srcOffset += copyLen;
+                  if (this._offset >= FRAME_SIZE) {
+                    this._emitFrame();
                   }
-                  const rms = Math.sqrt(sumSq / FRAME_SIZE);
-                  this.port.postMessage({ buffer: pcm16.buffer, rms }, [pcm16.buffer]);
-                  this._offset = 0;
                 }
+              } else {
+                const ratio = inRate / TARGET_SAMPLE_RATE;
+                while (this._phase < channel.length) {
+                  const pFloor = Math.floor(this._phase);
+                  const pCeil = Math.min(pFloor + 1, channel.length - 1);
+                  const frac = this._phase - pFloor;
+                  const sample = channel[pFloor] * (1.0 - frac) + channel[pCeil] * frac;
+
+                  this._buffer[this._offset++] = sample;
+                  if (this._offset >= FRAME_SIZE) {
+                    this._emitFrame();
+                  }
+                  this._phase += ratio;
+                }
+                this._phase -= channel.length;
               }
               return true;
+            }
+
+            _emitFrame() {
+              const pcm16 = new Int16Array(FRAME_SIZE);
+              let sumSq = 0;
+              for (let i = 0; i < FRAME_SIZE; i++) {
+                const sample = this._buffer[i];
+                sumSq += sample * sample;
+                const s = Math.max(-1.0, Math.min(1.0, sample));
+                pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+              }
+              const rms = Math.sqrt(sumSq / FRAME_SIZE);
+              this.port.postMessage({ buffer: pcm16.buffer, rms }, [pcm16.buffer]);
+              this._offset = 0;
             }
           }
           registerProcessor("audio-capture-processor", AudioCaptureProcessor);
@@ -464,14 +554,37 @@ export function useVoiceSession({ language = "EN" }: UseVoiceSessionOptions) {
           if (isMutedRef.current || !ws || ws.readyState !== WebSocket.OPEN) return;
           const { buffer, rms } = event.data;
 
-          // Acoustic echo suppression:
-          // If the AI Assistant is currently speaking, do NOT forward audio unless
-          // the user speaks loudly (rms >= 0.12) to intentionally interrupt.
-          // This prevents speaker bleed from cutting the assistant off mid-sentence.
-          if (isSpeakingRef.current && rms < 0.12) {
+          // Never send microphone audio during initial greeting
+          if (isGreetingActiveRef.current) {
             return;
           }
 
+          // Acoustic echo suppression & barge-in protection:
+          // When the assistant is speaking, computer speakers play into the mic.
+          // Never leak speaker audio to Gemini, or Gemini will falsely interrupt herself!
+          // Only permit intentional barge-in if user sustains high voice volume (> 0.40)
+          // for at least 5 consecutive frames (~400ms).
+          if (isSpeakingRef.current) {
+            if (rms > 0.40) {
+              bargeInFramesRef.current += 1;
+              if (bargeInFramesRef.current >= 5) {
+                bargeInFramesRef.current = 0;
+                console.log("[Voice] User intentional barge-in detected");
+                stopAllPlayback();
+                isGreetingActiveRef.current = false;
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                  ws.send(JSON.stringify({ type: "interrupt" }));
+                }
+                setState("listening");
+                setStatusMessage("Listening to you...");
+              }
+            } else {
+              bargeInFramesRef.current = 0;
+            }
+            return;
+          }
+
+          bargeInFramesRef.current = 0;
           ws.send(buffer);
         };
 
@@ -482,7 +595,7 @@ export function useVoiceSession({ language = "EN" }: UseVoiceSessionOptions) {
         silentGain.connect(ctx.destination);
 
         workletLoaded = true;
-        console.log(`[Voice] AudioWorklet active @ ${ctx.sampleRate}Hz (80ms frames)`);
+        console.log(`[Voice] AudioWorklet active @ ${ctx.sampleRate}Hz -> 16000Hz (80ms frames)`);
       } catch {
         // Fallback to ScriptProcessorNode cleanly without noisy console warnings
       }
@@ -490,7 +603,6 @@ export function useVoiceSession({ language = "EN" }: UseVoiceSessionOptions) {
       if (!workletLoaded) {
         let phase = 0.0;
         const ratio = ctx.sampleRate / 16000.0;
-        // 256-sample buffer → ~16 ms latency at 16 kHz (was 1024 → ~64 ms)
         const processor = ctx.createScriptProcessor(256, 1, 1);
         scriptProcessorRef.current = processor;
 
@@ -499,15 +611,36 @@ export function useVoiceSession({ language = "EN" }: UseVoiceSessionOptions) {
           if (isMutedRef.current || !ws || ws.readyState !== WebSocket.OPEN) return;
           const channel = e.inputBuffer.getChannelData(0);
 
+          let sumSq = 0;
+          for (let i = 0; i < channel.length; i++) {
+            sumSq += channel[i] * channel[i];
+          }
+          const rms = Math.sqrt(sumSq / channel.length);
+
+          if (isGreetingActiveRef.current) {
+            return;
+          }
+
           // Acoustic echo suppression for ScriptProcessor fallback:
           if (isSpeakingRef.current) {
-            let sumSq = 0;
-            for (let i = 0; i < channel.length; i++) {
-              sumSq += channel[i] * channel[i];
+            if (rms > 0.40) {
+              bargeInFramesRef.current += 1;
+              if (bargeInFramesRef.current >= 5) {
+                bargeInFramesRef.current = 0;
+                stopAllPlayback();
+                isGreetingActiveRef.current = false;
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                  ws.send(JSON.stringify({ type: "interrupt" }));
+                }
+                setState("listening");
+                setStatusMessage("Listening to you...");
+              }
+            } else {
+              bargeInFramesRef.current = 0;
             }
-            const rms = Math.sqrt(sumSq / channel.length);
-            if (rms < 0.12) return;
+            return;
           }
+          bargeInFramesRef.current = 0;
 
           if (ctx.sampleRate === 16000) {
             const pcm16 = new Int16Array(channel.length);
@@ -572,6 +705,8 @@ export function useVoiceSession({ language = "EN" }: UseVoiceSessionOptions) {
       setAssistantTranscript("");
       setSources([]);
     }
+    isGreetingActiveRef.current = true;
+    isSpeakingRef.current = true;
     setState("connecting");
     setStatusMessage("Connecting to Gemini Live API...");
     turnCompleteRef.current = true;
@@ -623,18 +758,28 @@ export function useVoiceSession({ language = "EN" }: UseVoiceSessionOptions) {
           switch (msg.type) {
             case "ready":
               reconnectAttemptsRef.current = 0;
-              if (!microphoneErrorRef.current) {
-                setState("listening");
-                setStatusMessage("Connected. How can I help you today?");
-              }
+              isGreetingActiveRef.current = true;
+              isSpeakingRef.current = true;
+              setState("speaking");
+              setStatusMessage("AI Assistant is greeting you...");
               break;
 
             case "turn_start":
-              if (msg.speaker === "user") {
+              if (msg.speaker === "assistant") {
+                isSpeakingRef.current = true;
+                setState("speaking");
+                setStatusMessage(
+                  msg.detail === "greeting" || isGreetingActiveRef.current
+                    ? "AI Assistant is greeting you..."
+                    : "AI Assistant is speaking..."
+                );
+              } else if (msg.speaker === "user") {
+                isGreetingActiveRef.current = false;
                 if (isSpeakingRef.current) {
                   stopAllPlayback();
                 }
-                // When a new user speech turn begins, clear previous assistant response
+                turnCompleteRef.current = false;
+                turnCompleteReceivedRef.current = false;
                 setAssistantTranscript("");
                 setSources([]);
                 if (stateRef.current !== "listening") {
@@ -650,7 +795,10 @@ export function useVoiceSession({ language = "EN" }: UseVoiceSessionOptions) {
 
             case "interrupted":
               stopAllPlayback();
+              isGreetingActiveRef.current = false;
+              isSpeakingRef.current = false;
               turnCompleteRef.current = true;
+              turnCompleteReceivedRef.current = true;
               setUserTranscript("");
               setAssistantTranscript("");
               setSources([]);
@@ -660,13 +808,24 @@ export function useVoiceSession({ language = "EN" }: UseVoiceSessionOptions) {
 
             case "turn_complete":
               turnCompleteRef.current = true;
+              turnCompleteReceivedRef.current = true;
               if (msg.user_transcript) setUserTranscript(msg.user_transcript);
               if (msg.assistant_transcript) setAssistantTranscript(msg.assistant_transcript);
-              if (activeSourcesSetRef.current.size === 0) {
-                isSpeakingRef.current = false;
-                setState("listening");
-                setStatusMessage("Listening to you...");
-              }
+
+              const currentCtx = playbackContextRef.current;
+              const audioTime = currentCtx ? currentCtx.currentTime : 0;
+              const scheduledEnd = turnScheduledEndTimeRef.current;
+              const currentEpoch = playbackEpochRef.current;
+              const remainingMs = Math.max(60, (scheduledEnd - audioTime) * 1000 + 80);
+
+              setTimeout(() => {
+                if (currentEpoch === playbackEpochRef.current) {
+                  isGreetingActiveRef.current = false;
+                  isSpeakingRef.current = false;
+                  setState("listening");
+                  setStatusMessage("Listening to you...");
+                }
+              }, remainingMs);
               break;
 
             case "transcript":
@@ -785,6 +944,22 @@ export function useVoiceSession({ language = "EN" }: UseVoiceSessionOptions) {
     setIsMuted((prev) => !prev);
   }, []);
 
+  const interrupt = useCallback(() => {
+    stopAllPlayback();
+    isGreetingActiveRef.current = false;
+    isSpeakingRef.current = false;
+    const ws = wsRef.current;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      try {
+        ws.send(JSON.stringify({ type: "interrupt" }));
+      } catch {
+        /* ignore */
+      }
+    }
+    setState("listening");
+    setStatusMessage("Listening to you...");
+  }, [stopAllPlayback]);
+
   useEffect(() => {
     return () => {
       userEndedRef.current = true;
@@ -805,5 +980,6 @@ export function useVoiceSession({ language = "EN" }: UseVoiceSessionOptions) {
     startSession,
     endSession,
     toggleMute,
+    interrupt,
   };
 }
