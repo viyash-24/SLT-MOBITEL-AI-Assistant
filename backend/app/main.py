@@ -21,6 +21,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes.chat import chat_router
 from app.api.routes.health import health_router
 from app.api.routes.knowledge import knowledge_router
+from app.api.routes.tavus import tavus_router
 from app.api.routes.voice_live import voice_live_router
 from app.dependencies import get_assistant_service
 from config import get_settings
@@ -51,6 +52,7 @@ app.add_middleware(
 app.include_router(chat_router(_assistant))
 app.include_router(health_router(settings, _rag, len(KNOWLEDGE_BASE)))
 app.include_router(knowledge_router(_rag))
+app.include_router(tavus_router(settings))
 app.include_router(voice_live_router(_assistant, settings))
 
 
