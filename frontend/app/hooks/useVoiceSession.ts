@@ -721,6 +721,14 @@ export function useVoiceSession({ language = "EN" }: UseVoiceSessionOptions) {
         return;
       }
 
+      // Small 80ms mount-settle window prevents React StrictMode double-mount
+      // from firing duplicate concurrent WebSocket handshakes to the backend.
+      await new Promise((resolve) => setTimeout(resolve, 80));
+
+      if (generation !== connGenRef.current || userEndedRef.current) {
+        return;
+      }
+
       const wsUrl = getVoiceWebSocketUrl(sessionIdRef.current, languageRef.current);
       const ws = new WebSocket(wsUrl);
       ws.binaryType = "arraybuffer";
