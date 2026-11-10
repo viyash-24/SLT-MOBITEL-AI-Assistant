@@ -1,4 +1,5 @@
 import asyncio
+import traceback
 from config import get_settings
 from google.genai import Client
 
@@ -16,6 +17,7 @@ async def main():
         ) as session:
             print("Successfully connected to Gemini Live!")
     except Exception as e:
+        traceback.print_exc()
         print(f"Connection failed: {type(e).__name__}: {e}")
 
 if __name__ == "__main__":

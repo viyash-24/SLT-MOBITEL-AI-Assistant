@@ -13,6 +13,11 @@ class Settings(BaseSettings):
     gemini_embedding_model: str = "models/gemini-embedding-001"
     pgvector_collection: str = "slt_mobitel_knowledge"
 
+    # Tavus Conversational Video Interface (CVI)
+    tavus_api_key: str = ""
+    tavus_pal_id: str = ""       # PAL (Personified Application Layer) ID from Tavus dashboard
+    tavus_replica_id: str = ""   # Optional: override the digital replica/face (face_id)
+
     model_config = SettingsConfigDict(
         env_file=Path(__file__).resolve().parent / ".env",
         env_file_encoding="utf-8",
