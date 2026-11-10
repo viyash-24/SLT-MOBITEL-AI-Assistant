@@ -2008,6 +2008,47 @@ code { background: var(--pale, #e1eaf4); border-radius: 4px; color: var(--blue);
   object-fit: contain;
 }
 
+/* Voice assistant portrait: only the remote avatar is rendered. */
+.voice-chat-stage .tavus-avatar-player,
+.voice-chat-stage .tavus-loading-centered {
+  width: min(100%, 320px);
+  aspect-ratio: 1;
+  min-height: 0;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px rgba(94, 234, 212, 0.18), 0 16px 48px rgba(0, 0, 0, 0.3);
+}
+
+.voice-chat-stage .tavus-avatar-media {
+  object-fit: cover;
+}
+
+.voice-chat-stage .avatar-playback-btn {
+  bottom: 64px;
+  width: 220px;
+  max-width: 70%;
+  padding: 10px 14px;
+  font-size: 12px;
+}
+
+.voice-chat-privacy {
+  max-width: 390px;
+  margin: 0 0 24px;
+  color: #94a3b8;
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.voice-stop-btn {
+  background: rgba(148, 163, 184, 0.1);
+  border-color: rgba(148, 163, 184, 0.25);
+  color: #cbd5e1;
+}
+
+.voice-stop-btn:hover:not(:disabled) {
+  background: rgba(148, 163, 184, 0.2);
+}
+
 .avatar-playback-btn {
   position: absolute;
   bottom: 24px;
