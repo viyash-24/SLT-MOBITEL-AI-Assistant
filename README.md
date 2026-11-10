@@ -1,135 +1,21 @@
-# SLT-MOBITEL AI Assistant Frontend
+# SLT-MOBITEL AI Assistant
 
-Next.js frontend for the SLT-MOBITEL AI Assistant. The application provides text chat, voice chat, chat history, source references, language selection, and light/dark themes.
+Customer support application with text chat and a live Tavus avatar. In voice mode, Tavus is the sole speaking assistant: it receives microphone audio, generates the response, and streams its human-like face and synchronized voice directly into the application.
 
-## Features
+## Setup
 
-- Text chat with the SLT-MOBITEL AI Assistant backend.
-- Voice Agent using the browser Web Speech API.
-- Speech recognition and spoken responses in English, Sinhala, and Tamil when supported.
-- Live voice transcripts with start, stop, send, and cancel controls.
-- Persistent recent chat sessions using browser local storage.
-- Source and confidence information for assistant responses.
-- Responsive desktop and mobile layout.
-- Light and dark theme support.
+- Follow [backend setup](backend/README.md) for the FastAPI service and text-chat knowledge base.
+- Follow [frontend setup](frontend/README.md) for the Next.js application.
+- Configure `TAVUS_API_KEY` and `TAVUS_PAL_ID` on the backend. The PAL must have the intended face, voice, SLT-MOBITEL instructions, and verified knowledge configured in Tavus. `TAVUS_REPLICA_ID` optionally overrides its face.
 
-## Requirements
+Never put the Tavus API key in a `NEXT_PUBLIC_*` variable. Tavus requires an account with available conversation credits. Microphone access requires HTTPS or localhost.
 
-- Node.js 20 or newer is recommended.
-- npm or another compatible JavaScript package manager.
-- The backend API running locally or at a reachable URL.
-- A modern browser. Voice features require support for `SpeechRecognition` and `speechSynthesis`.
+## Voice experience
 
-## Installation
+Open **Talk to Voice Agent**, choose the language, and select **Start conversation**. Allow microphone access and speak naturally to Kasuni. The avatar's real video and audio play in one media element. Mute controls the actual microphone track; End conversation releases media and ends the Tavus session. A browser playback restriction shows an explicit button to enable avatar audio/video.
 
-From the `frontend` directory, install dependencies:
+The application uses Daily's headless WebRTC SDK as Tavus's transport. Users remain in the application; no hosted call-room interface, iframe, or separate voice assistant appears. The old Gemini Live endpoint is retired, and there is no static-photo lip animation fallback.
 
-```powershell
-npm install
-```
+Tavus voice knowledge is configured on the PAL. Text chat continues to use the backend RAG service; its database is not automatically synchronized into Tavus. Sinhala requires a compatible voice/STT configuration (see the backend guide).
 
-Create `.env.local` in the `frontend` directory when the backend is not running at the default URL:
-
-```env
-NEXT_PUBLIC_API_URL=http://localhost:8000
-```
-
-The frontend uses `http://localhost:8000` by default, so this file is optional for the standard local setup.
-
-## Run Locally
-
-Start the backend first from the `backend` directory. Follow [the backend setup guide](../backend/README.md), then run:
-
-```powershell
-.\.venv\Scripts\Activate.ps1
-uvicorn main:app --reload
-```
-
-In a second terminal, start the frontend from the `frontend` directory:
-
-```powershell
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) in a browser.
-
-## Available Commands
-
-| Command | Description |
-| --- | --- |
-| `npm run dev` | Start the Next.js development server. |
-| `npm run build` | Create a production build. |
-| `npm start` | Serve the production build. Run `npm run build` first. |
-| `npm run lint` | Run ESLint checks. |
-
-## Voice Agent
-
-The Voice Agent uses browser-native speech APIs and does not upload or store audio recordings.
-
-1. Open the Voice Agent from the application.
-2. Select **Start Conversation** or **Voice Chat**.
-3. Allow microphone access when prompted.
-4. Speak your question.
-5. Stop listening or wait for recognition to finish.
-6. The recognized text is sent to the same `/api/chat` endpoint used by text chat.
-7. The assistant response is displayed and read aloud automatically.
-
-| Language | Browser language code |
-| --- | --- |
-| English | `en-US` |
-| Sinhala | `si-LK` |
-| Tamil | `ta-LK` |
-
-Voice availability depends on the browser, operating system, permissions, microphone, and installed system voices.
-
-## Project Structure
-
-```text
-frontend/
-├── app/
-│   ├── components/       # Chat and voice UI components
-│   ├── hooks/            # Reusable client hooks, including voice chat
-│   ├── services/         # Backend API clients
-│   ├── types/            # Shared frontend TypeScript types
-│   ├── globals.css       # Application styles and responsive states
-│   ├── layout.tsx        # Root layout and metadata
-│   └── page.tsx          # Main application state and views
-├── public/images/        # Public images and branding
-├── eslint.config.mjs     # ESLint configuration
-├── next.config.ts        # Next.js configuration
-├── package.json          # Scripts and dependencies
-└── README.md             # Frontend documentation
-```
-
-## API Integration
-
-The frontend sends chat requests to:
-
-```text
-POST ${NEXT_PUBLIC_API_URL}/api/chat
-```
-
-Each request includes the current message, session ID, and recent conversation history. Voice input uses the same request format as text input; the frontend adds automatic speech playback for responses initiated through voice chat.
-
-## Troubleshooting
-
-### The assistant service cannot be reached
-
-Confirm that the backend is running on port `8000`, or set the correct URL in `.env.local`. Restart the frontend after changing environment variables.
-
-### Voice chat is unavailable
-
-Check that the browser supports speech recognition and synthesis, microphone permission has been granted, a working microphone is connected, and the required Sinhala or Tamil system voice is installed.
-
-### The backend returns a service-unavailable response
-
-Check [http://localhost:8000/api/health](http://localhost:8000/api/health). The backend must have its API key, database, vector extension, and indexed knowledge base configured.
-
-## Production Build
-
-```powershell
-npm run build
-npm start
-```
-
-Set `NEXT_PUBLIC_API_URL` to the deployed backend URL before building the frontend.
+See [voice architecture and validation](VOICE_AGENT_REPORT.md) for lifecycle details and the live acceptance checklist.
