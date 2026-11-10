@@ -15,8 +15,8 @@ class Settings(BaseSettings):
 
     # Tavus Conversational Video Interface (CVI)
     tavus_api_key: str = ""
-    tavus_pal_id: str = ""       # PAL (Personified Application Layer) ID from Tavus dashboard
-    tavus_replica_id: str = ""   # Optional: override the digital replica/face (face_id)
+    tavus_pal_id: str = ""       # Required: application PAL with its SLT-MOBITEL knowledge
+    tavus_replica_id: str = ""   # Optional: override the PAL's default face (face_id)
 
     model_config = SettingsConfigDict(
         env_file=Path(__file__).resolve().parent / ".env",

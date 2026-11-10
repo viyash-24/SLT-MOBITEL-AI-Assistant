@@ -4,9 +4,8 @@ This module wires the Clean Architecture layers together:
 
   Domain → Application → Infrastructure → API
 
-All routes are thin controllers that delegate to AssistantService.
-The existing `backend/main.py` is preserved for backward compatibility
-during migration; this file is the new recommended entry point.
+Text chat delegates to AssistantService; voice delegates exclusively to Tavus
+CVI. `backend/main.py` re-exports this application for backward compatibility.
 
 Run with:
     uvicorn app.main:app --reload --app-dir backend
@@ -15,14 +14,13 @@ Run with:
 """
 from __future__ import annotations
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes.chat import chat_router
 from app.api.routes.health import health_router
 from app.api.routes.knowledge import knowledge_router
 from app.api.routes.tavus import tavus_router
-from app.api.routes.voice_live import voice_live_router
 from app.dependencies import get_assistant_service
 from config import get_settings
 from rag import KNOWLEDGE_BASE, get_rag_service
@@ -35,8 +33,8 @@ app = FastAPI(
     title="SLT-MOBITEL AI Assistant API",
     version="2.0.0",
     description=(
-        "Clean Architecture refactor. Text chat and voice assistant share the same "
-        "AssistantService → VectorStore → LLM pipeline."
+        "SLT-MOBITEL text chat and embedded Tavus avatar assistant. "
+        "Tavus exclusively owns microphone input, speech, and synchronized video."
     ),
 )
 
@@ -53,19 +51,24 @@ app.include_router(chat_router(_assistant))
 app.include_router(health_router(settings, _rag, len(KNOWLEDGE_BASE)))
 app.include_router(knowledge_router(_rag))
 app.include_router(tavus_router(settings))
-app.include_router(voice_live_router(_assistant, settings))
+
+
+@app.websocket("/api/voice/live")
+async def retired_gemini_voice(websocket: WebSocket) -> None:
+    """Prevent stale clients from starting a second, independent speaking agent."""
+    await websocket.accept()
+    await websocket.send_json({
+        "type": "error",
+        "message": "Voice now uses the Tavus avatar. Refresh the voice page to reconnect.",
+    })
+    await websocket.close(code=1008)
 
 
 # Compatibility fallback for any stale browser tabs requesting the legacy LiveKit token
 @app.api_route("/api/livekit/token", methods=["GET", "POST", "OPTIONS"])
-def livekit_token_deprecated() -> dict[str, str]:
-    return {
-        "status": "upgraded",
-        "message": (
-            "LiveKit has been completely replaced by Google Gemini Live API. "
-            "Please refresh your browser tab at http://localhost:3000/voice to connect directly via WebSocket."
-        ),
-        "websocket_url": "/api/voice/live",
-        "token": "livekit-deprecated-use-gemini-live-api",
-    }
+def livekit_token_deprecated() -> None:
+    raise HTTPException(
+        status_code=410,
+        detail="Voice now uses the Tavus avatar. Refresh the voice page to reconnect.",
+    )
 
