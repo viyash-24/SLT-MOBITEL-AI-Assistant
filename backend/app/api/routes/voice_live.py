@@ -44,7 +44,7 @@ _CONTEXT_COMPRESSION = types.ContextWindowCompressionConfig(
     trigger_tokens=8000,
     sliding_window=types.SlidingWindow(target_tokens=6000),
 )
-_LIVE_CONNECT_TIMEOUT = 8.0
+_LIVE_CONNECT_TIMEOUT = 30.0
 
 _cached_client: genai.Client | None = None
 _cached_api_key: str | None = None
@@ -59,6 +59,10 @@ def _get_genai_client(api_key: str) -> genai.Client:
                 async_client_args={"ping_interval": None, "ping_timeout": None}
             ),
         )
+        if hasattr(_cached_client, "_api_client") and hasattr(
+            _cached_client._api_client, "_websocket_ssl_ctx"
+        ):
+            _cached_client._api_client._websocket_ssl_ctx["open_timeout"] = 30
         _cached_api_key = api_key
     return _cached_client
 
@@ -335,6 +339,14 @@ def voice_live_router(assistant: AssistantService, settings: Settings) -> APIRou
         session = None
         last_connect_error: Exception | None = None
         for config_index, cfg in enumerate(configs):
+            if websocket.client_state == WebSocketState.DISCONNECTED:
+                logger.info(
+                    "Client disconnected before Gemini Live session established [session=%s]",
+                    actual_session_id,
+                )
+                await _safe_close(websocket, code=1000)
+                return
+
             try:
                 session_cm = client.aio.live.connect(model=live_model, config=cfg)
                 session = await asyncio.wait_for(
@@ -344,10 +356,9 @@ def voice_live_router(assistant: AssistantService, settings: Settings) -> APIRou
                 break
             except Exception as exc:
                 last_connect_error = exc
-                if config_index == 0 and not _is_live_config_compatibility_error(exc):
-                    break
                 logger.warning(
-                    "Gemini Live connect failed, trying fallback config [session=%s]: %s",
+                    "Gemini Live connect attempt %d failed [session=%s]: %r",
+                    config_index + 1,
                     actual_session_id,
                     exc,
                 )
@@ -360,11 +371,17 @@ def voice_live_router(assistant: AssistantService, settings: Settings) -> APIRou
                 session = None
 
         if session is None or session_cm is None:
+            if websocket.client_state == WebSocketState.DISCONNECTED:
+                logger.info(
+                    "Client disconnected while connecting to Live API [session=%s]",
+                    actual_session_id,
+                )
+                return
+
             logger.error(
-                "Live session connection error [session=%s]: %s",
+                "Live session connection error [session=%s]: %r",
                 actual_session_id,
                 last_connect_error,
-                exc_info=True,
             )
             await _safe_send_json(websocket, {
                 "type": "error",
