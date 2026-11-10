@@ -11,7 +11,7 @@ describe("Tavus avatar playback", () => {
     const pause = vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
     const stream = {} as MediaStream;
     const { container, unmount } = render(createElement(TavusAvatarView, { stream }));
-    const video = screen.getByLabelText("Kasuni live AI avatar") as HTMLVideoElement;
+    const video = screen.getByLabelText("SLT Avatar live video") as HTMLVideoElement;
     await waitFor(() => expect(play).toHaveBeenCalledTimes(1));
     expect(video.srcObject).toBe(stream);
     expect(video.muted).toBe(false);
@@ -33,6 +33,6 @@ describe("Tavus avatar playback", () => {
     fireEvent.click(enable);
     await waitFor(() => expect(screen.queryByRole("button", { name: "Enable avatar audio and video" })).toBeNull());
     expect(play).toHaveBeenCalledTimes(2);
-    expect(screen.getByLabelText("Kasuni live AI avatar")).toBeTruthy();
+    expect(screen.getByLabelText("SLT Avatar live video")).toBeTruthy();
   });
 });
