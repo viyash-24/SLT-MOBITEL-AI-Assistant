@@ -12,7 +12,7 @@ Never put the Tavus API key in a `NEXT_PUBLIC_*` variable. Tavus requires an acc
 
 ## Voice experience
 
-Open **Talk to Voice Agent**, choose the language, and select **Start conversation**. Allow microphone access and speak naturally to Kasuni. The avatar's real video and audio play in one media element. Mute controls the actual microphone track; End conversation releases media and ends the Tavus session. A browser playback restriction shows an explicit button to enable avatar audio/video.
+Open **Talk to SLT Avatar**, choose the language, and select **Start conversation**. Allow microphone access and speak naturally to SLT Avatar. The avatar's real video and audio play in one media element. Mute controls the actual microphone track; End conversation releases media and ends the Tavus session. A browser playback restriction shows an explicit button to enable avatar audio/video.
 
 The application uses Daily's headless WebRTC SDK as Tavus's transport. Users remain in the application; no hosted call-room interface, iframe, or separate voice assistant appears. The old Gemini Live endpoint is retired, and there is no static-photo lip animation fallback.
 

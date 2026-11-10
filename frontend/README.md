@@ -21,7 +21,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 
 1. Open `/voice`, choose a language, and click **Start conversation**.
 2. Allow microphone access. The camera remains off.
-3. Speak to Kasuni once the live avatar is ready. Tavus handles listening, reasoning, speech, facial movement, and lip-sync.
+3. Speak to SLT Avatar once the live avatar is ready. Tavus handles listening, reasoning, speech, facial movement, and lip-sync.
 4. Use **Mute** or **End conversation** to control the session.
 
 `useTavusSession` creates one conversation through the backend, joins its URL with `@daily-co/daily-js`'s call object, and exposes the avatar's remote audio/video stream. `TavusAvatarView` renders that stream in a single video element. There is no prebuilt room UI, independent PCM audio player, browser speech synthesis, or canvas avatar fallback.

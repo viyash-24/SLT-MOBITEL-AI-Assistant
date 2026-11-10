@@ -32,10 +32,10 @@ export default function VoiceAssistantPage() {
       language,
       conversationName: "SLT-MOBITEL AI Voice Session",
       customGreeting: language === "SI"
-        ? "ආයුබෝවන්! මම කසුනි. අද මම ඔබට කෙසේ උදව් කරන්නද?"
+        ? "ආයුබෝවන්! මම SLT Avatar. අද මම ඔබට කෙසේ උදව් කරන්නද?"
         : language === "TA"
-          ? "வணக்கம்! நான் கசுனி. இன்று நான் உங்களுக்கு எவ்வாறு உதவலாம்?"
-          : "Hello! I'm Kasuni, your SLT-MOBITEL AI assistant. How can I help you today?",
+          ? "வணக்கம்! நான் SLT Avatar. இன்று நான் உங்களுக்கு எவ்வாறு உதவலாம்?"
+          : "Hello! I'm SLT Avatar, your SLT-MOBITEL AI assistant. How can I help you today?",
     });
   };
 
@@ -70,7 +70,7 @@ export default function VoiceAssistantPage() {
       <main className="live-avatar-stage tavus-stage-live">
         <div className="avatar-frame-wrap avatar-frame-tavus">
           <div className="avatar-identity">
-            <h1>Talk to Kasuni</h1>
+            <h1>Talk to SLT Avatar</h1>
             <p>Your SLT-MOBITEL AI avatar</p>
           </div>
           {avatarStream && <TavusAvatarView stream={avatarStream} />}
@@ -78,8 +78,8 @@ export default function VoiceAssistantPage() {
             <div className="tavus-loading-centered" aria-busy={isLoading || isEnding}>
               {isLoading || isEnding ? <div className="tavus-spinner" />
                 : isError ? <AlertCircle size={40} /> : <Video size={40} />}
-              <p>{isLoading ? "Connecting to Kasuni…" : isEnding ? "Ending conversation…"
-                : isError ? "Live avatar unavailable" : "Start a conversation with Kasuni"}</p>
+              <p>{isLoading ? "Connecting to SLT Avatar…" : isEnding ? "Ending conversation…"
+                : isError ? "Live avatar unavailable" : "Start a conversation with SLT Avatar"}</p>
               <p className="tavus-loading-sub">
                 {isLoading ? "Preparing your live avatar and microphone."
                   : !isError && !isEnding ? "Allow microphone access, then speak naturally. Your camera stays off." : ""}
@@ -88,7 +88,7 @@ export default function VoiceAssistantPage() {
           )}
           {tavusError && <div className="avatar-error-banner" role="alert"><AlertCircle size={18} /><span>{tavusError}</span></div>}
           <div className="avatar-status-caption">
-            {isLive && <span>{isMuted ? "Unmute to speak to Kasuni." : "Kasuni is ready — speak naturally."}</span>}
+            {isLive && <span>{isMuted ? "Unmute to speak to SLT Avatar." : "SLT Avatar is ready — speak naturally."}</span>}
           </div>
           <div className="controls-group">
             {!busy && <button className="control-btn mute-btn" onClick={start}>

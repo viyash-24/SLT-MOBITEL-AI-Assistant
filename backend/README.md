@@ -86,13 +86,14 @@ Set these **server-side** values in `backend/.env`:
 
 ```dotenv
 TAVUS_API_KEY=your_tavus_api_key
-TAVUS_PAL_ID=your_slt_mobitel_pal_id
+TAVUS_PAL_ID=pc6868a0543c
 # Optional; omit to keep the PAL's configured default face:
-TAVUS_REPLICA_ID=your_tavus_face_id
+TAVUS_REPLICA_ID=r3f427f43c9d
 ```
 
-Create/configure the PAL in Tavus with `pipeline_mode: full`, a realistic default
-face, and the SLT-MOBITEL customer support identity. The API sends current
+The IDs above select this application's SLT AI Assistant PAL and face. Keep the
+API key private. Configure the PAL in Tavus with `pipeline_mode: full`, a realistic
+face, and the SLT Avatar customer support identity. The API sends current
 `pal_id` and optional `face_id` fields; the existing `TAVUS_REPLICA_ID` environment
 variable remains supported. An explicit PAL is required, so missing configuration
 cannot silently select an unrelated stock assistant.

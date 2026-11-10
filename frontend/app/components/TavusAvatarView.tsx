@@ -35,7 +35,7 @@ export function TavusAvatarView({ stream }: { stream: MediaStream }) {
 
   return (
     <div className="tavus-avatar-player">
-      <video ref={videoRef} autoPlay playsInline aria-label="Kasuni live AI avatar" className="tavus-avatar-media" />
+      <video ref={videoRef} autoPlay playsInline aria-label="SLT Avatar live video" className="tavus-avatar-media" />
       {needsPlayback && (
         <button className="control-btn avatar-playback-btn" onClick={resumePlayback}>
           Enable avatar audio and video

@@ -182,7 +182,7 @@ export function useTavusSession(): UseTavusSessionResult {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             conversational_context: options.conversationalContext ?? "",
-            custom_greeting: options.customGreeting ?? "Hello! I'm Kasuni, your SLT-MOBITEL AI assistant. How can I help you today?",
+            custom_greeting: options.customGreeting ?? "Hello! I'm SLT Avatar, your SLT-MOBITEL AI assistant. How can I help you today?",
             conversation_name: options.conversationName ?? "SLT-MOBITEL AI Voice Session",
             language: options.language ?? "EN",
           }),
@@ -205,7 +205,7 @@ export function useTavusSession(): UseTavusSessionResult {
         const waitForAvatar = () => {
           if (operation.timeout) return;
           operation.timeout = setTimeout(() => {
-            fail("Kasuni's live video and audio did not connect. Please try again.");
+            fail("SLT Avatar's live video and audio did not connect. Please try again.");
           }, 45_000);
         };
         const syncParticipants = () => {

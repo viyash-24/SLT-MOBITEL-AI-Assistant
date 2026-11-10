@@ -249,14 +249,15 @@ export default function Home() {
             <Link
               href="/voice"
               className="talk-to-ai-btn"
-              title="Start real-time voice conversation with SLT-MOBITEL Live AI Avatar"
+              title="Talk to SLT Avatar"
+              aria-label="Talk to SLT Avatar"
               id="talk-to-ai-button"
               prefetch={true}
             >
               <span className="talk-to-ai-icon">
                 <Mic size={15} />
               </span>
-              <span className="talk-to-ai-label">Talk to AI</span>
+              <span className="talk-to-ai-label">Talk to SLT Avatar</span>
               <span className="talk-to-ai-badge">LIVE</span>
             </Link>
             {view === "active" && messages.length > 0 && (
