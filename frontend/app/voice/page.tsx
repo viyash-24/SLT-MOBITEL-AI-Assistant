@@ -3,9 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowLeft, Mic, MicOff, Square, AlertCircle, AudioLines } from "lucide-react";
-import { TavusAvatarView } from "../components/TavusAvatarView";
-import { useTavusSession } from "../hooks/useTavusSession";
+import { ArrowLeft, Mic, MicOff, Square, AlertCircle, Trash2, Volume2, VolumeX } from "lucide-react";
+import { VoiceVisualizer } from "../components/VoiceVisualizer";
+import { useVoiceSession } from "../hooks/useVoiceSession";
+import { ChatMessage } from "../components/ChatMessage";
 
 const LANGUAGES = [
   { code: "EN", label: "English" },
@@ -13,99 +14,236 @@ const LANGUAGES = [
   { code: "TA", label: "தமிழ்" },
 ] as const;
 
-export default function VoiceAssistantPage() {
-  const [language, setLanguage] = useState<"EN" | "SI" | "TA">("EN");
-  const {
-    tavusState, avatarStream, tavusError, isMuted,
-    startTavusSession, endTavusSession, toggleMute,
-  } = useTavusSession();
-  const isLive = tavusState === "active";
-  const isLoading = tavusState === "checking" || tavusState === "connecting";
-  const isEnding = tavusState === "ending";
-  const isError = tavusState === "error" || tavusState === "not_configured";
-  const busy = isLive || isLoading || isEnding;
-  const status = isLoading ? "Preparing…" : isEnding ? "Stopping…"
-    : isLive ? (isMuted ? "Microphone muted" : "Voice chat on") : isError ? "Unavailable" : "Ready to talk";
+const STATE_LABELS: Record<string, string> = {
+  idle: "Ready to talk",
+  listening: "Listening…",
+  processing: "Thinking…",
+  speaking: "Speaking…",
+  error: "Error",
+};
 
-  const start = () => {
-    void startTavusSession({
-      language,
-      conversationName: "SLT-MOBITEL AI Voice Session",
-      customGreeting: language === "SI"
-        ? "ආයුබෝවන්! මම SLT Avatar. අද මම ඔබට කෙසේ උදව් කරන්නද?"
-        : language === "TA"
-          ? "வணக்கம்! நான் SLT Avatar. இன்று நான் உங்களுக்கு எவ்வாறு உதவலாம்?"
-          : "Hello! I'm SLT Avatar, your SLT-MOBITEL AI assistant. How can I help you today?",
-    });
+export default function VoiceAssistantPage() {
+  const [language, setLanguageSt] = useState<"EN" | "SI" | "TA">("EN");
+  const [openSource, setOpenSource] = useState<string | null>(null);
+
+  const {
+    state,
+    transcript,
+    messages,
+    error,
+    isMuted,
+    isSupported,
+    startListening,
+    stopListening,
+    toggleMute,
+    clearMessages,
+    setLanguage,
+  } = useVoiceSession(language);
+
+  const isListening = state === "listening";
+  const isProcessing = state === "processing";
+  const isSpeaking = state === "speaking";
+  const isError = state === "error";
+  const busy = isListening || isProcessing || isSpeaking;
+
+  const handleLanguageChange = (lang: "EN" | "SI" | "TA") => {
+    setLanguageSt(lang);
+    setLanguage(lang);
   };
+
+  const statusLabel = isError
+    ? (error ?? "Error")
+    : (STATE_LABELS[state] ?? "Ready");
+
+  const dotClass = isListening
+    ? "dot-emerald"
+    : isSpeaking || isProcessing
+    ? "dot-amber"
+    : isError
+    ? "dot-red"
+    : "dot-muted";
 
   return (
     <div className="live-avatar-container">
-      <div className="live-avatar-ambient"><div className="ambient-glow idle" /></div>
+      <div className="live-avatar-ambient">
+        <div className={`ambient-glow ${busy ? "active" : "idle"}`} />
+      </div>
+
+      {/* ── Header ── */}
       <header className="live-avatar-header">
         <div className="header-left">
-          <Link href="/" className="back-link" aria-label="Back to Chat" onClick={() => void endTavusSession()}>
-            <ArrowLeft size={18} /><span>Back to Chat</span>
+          <Link href="/" className="back-link" aria-label="Back to Chat">
+            <ArrowLeft size={18} />
+            <span>Back to Chat</span>
           </Link>
           <div className="brand-badge">
             <Image src="/images/emblem.svg" alt="SLT-MOBITEL" width={96} height={34} />
           </div>
         </div>
+
         <div className="header-center">
           <div className="live-status-pill" role="status">
-            <span className={`status-dot ${isLive ? "dot-emerald" : isError ? "dot-red" : "dot-amber"}`} />
-            <span className="status-text">{status}</span>
+            <span className={`status-dot ${dotClass}`} />
+            <span className="status-text">{statusLabel}</span>
           </div>
         </div>
+
         <div className="header-right">
           <label className="avatar-language-label">
             Language
-            <select className="lang-picker-btn" value={language} disabled={busy}
-              onChange={(event) => setLanguage(event.target.value as typeof language)}>
-              {LANGUAGES.map((item) => <option key={item.code} value={item.code}>{item.label}</option>)}
+            <select
+              className="lang-picker-btn"
+              value={language}
+              disabled={busy}
+              onChange={(e) => handleLanguageChange(e.target.value as typeof language)}
+            >
+              {LANGUAGES.map((l) => (
+                <option key={l.code} value={l.code}>
+                  {l.label}
+                </option>
+              ))}
             </select>
           </label>
         </div>
       </header>
-      <main className="live-avatar-stage tavus-stage-live voice-chat-stage">
-        <div className="avatar-frame-wrap avatar-frame-tavus">
+
+      {/* ── Main stage ── */}
+      <main className="live-avatar-stage voice-chat-stage">
+        <div className="avatar-frame-wrap">
           <div className="avatar-identity">
-            <h1>Voice chat with SLT Avatar</h1>
+            <h1>Voice Chat with SLT Avatar</h1>
             <p>Speak naturally and hear your assistant respond.</p>
           </div>
-          <p className="voice-chat-privacy">Microphone only · Your camera stays off · Only the assistant is shown</p>
-          {avatarStream && <TavusAvatarView stream={avatarStream} />}
-          {!avatarStream && (
-            <div className="tavus-loading-centered" aria-busy={isLoading || isEnding}>
-              {isLoading || isEnding ? <div className="tavus-spinner" />
-                : isError ? <AlertCircle size={40} /> : <AudioLines size={48} />}
-              <p>{isLoading ? "Preparing SLT Avatar…" : isEnding ? "Stopping voice chat…"
-                : isError ? "SLT Avatar unavailable" : "Ready when you are"}</p>
-              <p className="tavus-loading-sub">
-                {isLoading ? "Getting your assistant and microphone ready."
-                  : !isError && !isEnding ? "Your speaking assistant will appear here." : ""}
-              </p>
+
+          {!isSupported && (
+            <div className="avatar-error-banner" role="alert">
+              <AlertCircle size={18} />
+              <span>
+                Your browser does not support the Web Speech API. Please use
+                Chrome or Edge for voice chat.
+              </span>
             </div>
           )}
-          {tavusError && <div className="avatar-error-banner" role="alert"><AlertCircle size={18} /><span>{tavusError}</span></div>}
+
+          {/* Waveform visualizer */}
+          <div className="voice-visualizer-wrap">
+            <VoiceVisualizer state={state} />
+          </div>
+
+          {/* Live transcript */}
+          {transcript && (
+            <div className="voice-transcript" role="status" aria-live="polite">
+              <span className="transcript-label">You said:</span> {transcript}
+            </div>
+          )}
+
+          {/* Error banner */}
+          {error && (
+            <div className="avatar-error-banner" role="alert">
+              <AlertCircle size={18} />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {/* Speaking assistant status */}
           <div className="avatar-status-caption">
-            {isLive && <span>{isMuted ? "Unmute to speak to SLT Avatar." : "SLT Avatar is ready — speak naturally."}</span>}
+            {isSpeaking && (
+              <span>SLT Avatar is speaking — click Stop or Mute to interrupt.</span>
+            )}
+            {isListening && (
+              <span>Listening… speak your question now.</span>
+            )}
+            {isProcessing && (
+              <span>Processing your question…</span>
+            )}
           </div>
+
+          {/* Controls */}
           <div className="controls-group">
-            {!busy && <button className="control-btn mute-btn" onClick={start}>
-              <Mic size={18} /><span>{isError ? "Try again" : "Start voice chat"}</span>
-            </button>}
-            {isLive && <button className={`control-btn mute-btn ${isMuted ? "muted" : ""}`}
-              onClick={() => void toggleMute()} aria-pressed={isMuted}>
-              {isMuted ? <MicOff size={18} /> : <Mic size={18} />}<span>{isMuted ? "Unmute" : "Mute"}</span>
-            </button>}
-            {(isLive || isLoading || isEnding) && <button className="control-btn voice-stop-btn"
-              disabled={isEnding} onClick={() => void endTavusSession()}>
-              <Square size={16} /><span>{isLoading ? "Cancel" : "Stop voice chat"}</span>
-            </button>}
+            {/* Start / tap to listen */}
+            {!busy && (
+              <button
+                className="control-btn mute-btn"
+                onClick={startListening}
+                disabled={!isSupported}
+              >
+                <Mic size={18} />
+                <span>{isError ? "Try again" : "Start voice chat"}</span>
+              </button>
+            )}
+
+            {/* Stop listening */}
+            {isListening && (
+              <button
+                className="control-btn voice-stop-btn"
+                onClick={stopListening}
+              >
+                <Square size={16} />
+                <span>Stop listening</span>
+              </button>
+            )}
+
+            {/* Mute / unmute TTS */}
+            {(isSpeaking || messages.length > 0) && (
+              <button
+                className={`control-btn mute-btn ${isMuted ? "muted" : ""}`}
+                onClick={toggleMute}
+                aria-pressed={isMuted}
+              >
+                {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                <span>{isMuted ? "Unmute speaker" : "Mute speaker"}</span>
+              </button>
+            )}
+
+            {/* Clear conversation */}
+            {messages.length > 0 && !busy && (
+              <button
+                className="control-btn"
+                onClick={clearMessages}
+                title="Clear conversation"
+              >
+                <Trash2 size={16} />
+                <span>Clear</span>
+              </button>
+            )}
           </div>
-          <p className="tavus-loading-sub">Choose a language, start voice chat, and allow your microphone.</p>
+
+          <p className="tavus-loading-sub voice-hint">
+            {isSupported
+              ? "Choose a language, press Start, then allow microphone access."
+              : "Use Chrome or Edge for voice chat."}
+          </p>
+
+          {/* Muted TTS notice */}
+          {isMuted && (
+            <div className="voice-muted-notice">
+              <MicOff size={14} /> Speaker is muted — you will see answers but
+              not hear them.
+            </div>
+          )}
         </div>
+
+        {/* Conversation history */}
+        {messages.length > 0 && (
+          <div className="voice-history">
+            <div className="voice-history-heading">Conversation</div>
+            <div className="chat-stream voice-chat-stream">
+              {messages.map((msg) => (
+                <ChatMessage
+                  key={msg.id}
+                  message={msg}
+                  openSource={openSource === msg.id}
+                  onToggleSource={() =>
+                    setOpenSource(openSource === msg.id ? null : msg.id)
+                  }
+                  onCopy={(text) =>
+                    navigator.clipboard.writeText(text).catch(() => undefined)
+                  }
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
