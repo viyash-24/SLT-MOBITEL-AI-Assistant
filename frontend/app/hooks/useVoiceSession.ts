@@ -18,6 +18,12 @@ import type { VoiceState } from "../components/AvatarView";
 
 export type UseVoiceSessionOptions = {
   language: string;
+  /** Called with every raw 24 kHz PCM ArrayBuffer received from the backend.
+   *  Used by the Simli integration to resample + forward audio for lip-sync.
+   *  Called BEFORE the buffer is scheduled for local playback. */
+  onRawPcm24k?: (chunk: Uint8Array) => void;
+  /** When true, skip local PCM playback (Simli plays the audio instead). */
+  suppressGeminiPlayback?: boolean;
 };
 
 const OUTPUT_SAMPLE_RATE = 24000;
@@ -55,7 +61,7 @@ function decodeBase64Pcm(base64Data: string): ArrayBuffer {
   return bytes.buffer;
 }
 
-export function useVoiceSession({ language = "EN" }: UseVoiceSessionOptions) {
+export function useVoiceSession({ language = "EN", onRawPcm24k, suppressGeminiPlayback = false }: UseVoiceSessionOptions) {
   const [state, setState] = useState<VoiceState>("idle");
   const [statusMessage, setStatusMessage] = useState("Ready to Connect");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -103,6 +109,12 @@ export function useVoiceSession({ language = "EN" }: UseVoiceSessionOptions) {
   const lastLevelRef = useRef(0);
   const lastVisualizerUpdateRef = useRef(0);
   const scheduleReconnectRef = useRef<(generation: number) => void>(() => {});
+
+  // Refs for Simli integration callbacks (stable refs avoid stale closures)
+  const onRawPcm24kRef = useRef(onRawPcm24k);
+  const suppressGeminiPlaybackRef = useRef(suppressGeminiPlayback);
+  useEffect(() => { onRawPcm24kRef.current = onRawPcm24k; }, [onRawPcm24k]);
+  useEffect(() => { suppressGeminiPlaybackRef.current = suppressGeminiPlayback; }, [suppressGeminiPlayback]);
 
   useEffect(() => {
     const unlockAudio = () => {
@@ -292,6 +304,24 @@ export function useVoiceSession({ language = "EN" }: UseVoiceSessionOptions) {
   const playPcmBuffer = useCallback(
     (pcmBuffer: ArrayBuffer) => {
       try {
+        // Notify Simli integration with the raw bytes BEFORE any processing
+        if (onRawPcm24kRef.current) {
+          onRawPcm24kRef.current(new Uint8Array(pcmBuffer));
+        }
+
+        // When Simli is active it plays the audio — skip local Web Audio playback
+        // to prevent dual audio. We still run the full playback pipeline when
+        // suppressGeminiPlayback is false (Simli not connected / fallback mode).
+        if (suppressGeminiPlaybackRef.current) {
+          // Even when suppressed, track speaking state so UI updates correctly
+          if (!isSpeakingRef.current) {
+            isSpeakingRef.current = true;
+            setState("speaking");
+            setStatusMessage("AI Assistant is speaking...");
+          }
+          return;
+        }
+
         if (!playbackContextRef.current) {
           prewarmPlaybackContext();
         }

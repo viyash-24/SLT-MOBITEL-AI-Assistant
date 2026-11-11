@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
   Globe,
@@ -14,6 +14,7 @@ import {
   Square,
 } from "lucide-react";
 import { useVoiceSession } from "../hooks/useVoiceSession";
+import { useSimliAvatar } from "../hooks/useSimliAvatar";
 import { AvatarView } from "../components/AvatarView";
 
 
@@ -27,6 +28,27 @@ export default function VoiceAssistantPage() {
   const [selectedLanguage, setSelectedLanguage] = useState("EN");
   const [langMenuOpen, setLangMenuOpen] = useState(false);
 
+  // ── Simli avatar hook ────────────────────────────────────────────────────
+  const {
+    videoRef: simliVideoRef,
+    audioRef: simliAudioRef,
+    status: simliStatus,
+    startAvatar,
+    stopAvatar,
+    sendAudio,
+    isConnected: simliConnected,
+  } = useSimliAvatar();
+
+  // Stable callback ref for sendAudio (avoids stale closure in useVoiceSession)
+  const sendAudioRef = useRef(sendAudio);
+  useEffect(() => { sendAudioRef.current = sendAudio; }, [sendAudio]);
+
+  // onRawPcm24k: called by useVoiceSession for every binary audio frame
+  const handleRawPcm = useCallback((chunk: Uint8Array) => {
+    sendAudioRef.current(chunk);
+  }, []);
+
+  // ── Voice session hook ───────────────────────────────────────────────────
   const {
     state,
     statusMessage,
@@ -41,13 +63,19 @@ export default function VoiceAssistantPage() {
     interrupt,
   } = useVoiceSession({
     language: selectedLanguage,
+    onRawPcm24k: handleRawPcm,
+    // When Simli is connected it plays the audio — suppress raw Gemini playback
+    suppressGeminiPlayback: simliConnected,
   });
 
+  // ── Session lifecycle ────────────────────────────────────────────────────
   // Automatically start voice session on mount
   useEffect(() => {
     startSession();
+    startAvatar();
     return () => {
       endSession();
+      stopAvatar();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -158,7 +186,14 @@ export default function VoiceAssistantPage() {
       <main className="live-avatar-stage">
         <div className="avatar-frame-wrap">
           {/* Avatar with dynamic aura and state indicator */}
-          <AvatarView state={state} audioLevel={audioLevel} isMuted={isMuted} />
+          <AvatarView
+            state={state}
+            audioLevel={audioLevel}
+            isMuted={isMuted}
+            simliStatus={simliStatus}
+            simliVideoRef={simliVideoRef}
+            simliAudioRef={simliAudioRef}
+          />
 
           {/* Representative Identity & Title */}
           <div className="avatar-identity">
@@ -215,7 +250,7 @@ export default function VoiceAssistantPage() {
                 <button
                   type="button"
                   className="control-btn primary-start-btn"
-                  onClick={startSession}
+                  onClick={() => { startSession(); startAvatar(); }}
                   title="Start Voice Conversation"
                   aria-label="Start Voice Conversation"
                 >
@@ -236,7 +271,7 @@ export default function VoiceAssistantPage() {
             ) : (
               <Link
                 href="/"
-                onClick={endSession}
+                onClick={() => { endSession(); stopAvatar(); }}
                 className="control-btn end-btn"
                 title="End conversation and return to chat"
                 aria-label="Stop Conversation"
@@ -252,7 +287,7 @@ export default function VoiceAssistantPage() {
             <div className="avatar-error-banner">
               <AlertCircle size={16} />
               <span>{errorMessage}</span>
-              <button onClick={startSession} className="retry-btn">
+              <button onClick={() => { startSession(); startAvatar(); }} className="retry-btn">
                 <RotateCcw size={14} /> Retry
               </button>
             </div>

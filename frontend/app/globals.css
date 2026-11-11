@@ -1871,3 +1871,14 @@ html.dark .voice-muted-notice {
   overflow-y: auto;
   padding: 24px 20px 60px;
 }
+
+/* ============================================================
+   Simli Avatar Video — fills the circular avatar-image-container
+   ============================================================ */
+.simli-avatar-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
