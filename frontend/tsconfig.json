@@ -31,8 +31,6 @@
     "**/*.mts"
   ],
   "exclude": [
-    "node_modules",
-    "tests/TavusAvatarView.test.ts",
-    "tests/useTavusSession.test.ts"
+    "node_modules"
   ]
 }

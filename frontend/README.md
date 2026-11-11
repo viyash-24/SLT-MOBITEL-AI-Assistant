@@ -1,41 +1,37 @@
 # SLT-MOBITEL AI Assistant Frontend
 
-Next.js application with text chat, persistent recent chats, language selection, themes, and a Tavus live avatar.
+Next.js application featuring text chat with RAG knowledge retrieval, persistent chat sessions, language selection, light/dark themes, and an interactive real-time voice avatar.
 
-## Run locally
+## Run Locally
 
-Use Node.js 22 or newer (including the test tooling), and start the [backend](../backend/README.md) on port 8000.
+Use Node.js 20 or newer, and start the [backend](../backend/README.md) on port 8000.
 
 ```sh
-npm ci
+npm install
 npm run dev
 ```
 
-Open http://localhost:3000. For a different backend address, set `NEXT_PUBLIC_API_URL` in `.env.local` before starting or building the app:
+Open http://localhost:3000. For a different backend address, set `NEXT_PUBLIC_API_URL` in `.env.local`:
 
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
-## Voice
+## Voice Avatar
 
-1. Open `/voice`, choose a language, and click **Start voice chat**.
-2. Allow microphone access. The camera remains off.
-3. Speak to SLT Avatar once the live avatar is ready. Tavus handles listening, reasoning, speech, facial movement, and lip-sync.
-4. Use **Mute** or **Stop voice chat** to control the session. Only the assistant's animated portrait is displayed; there is no user camera preview or video-call screen.
-
-`useTavusSession` creates one conversation through the backend, joins its URL with `@daily-co/daily-js`'s call object, and exposes the avatar's remote audio/video stream. `TavusAvatarView` renders that stream in a single video element. There is no prebuilt room UI, independent PCM audio player, browser speech synthesis, or canvas avatar fallback.
-
-Session creation is initiated by a user click, guarded against duplicate starts, and cleaned up when canceled or unmounted, including late API responses. The UI becomes live only after joining and receiving the avatar's audio/video tracks. Language is chosen before starting, and microphone controls use the SDK's real local-audio state. If autoplay is blocked, click **Enable avatar audio and video**.
-
-Configure Tavus credentials, PAL knowledge, supported languages, and credits on the backend/Tavus account. Provider failures remain visible; a different assistant never takes over silently. Voice requires HTTPS or localhost and a WebRTC-capable browser.
+1. Open `/voice` (or click **Talk to SLT Avatar** from the home screen).
+2. Choose your preferred language (English, Sinhala, Tamil) and click **Start**.
+3. Allow microphone access.
+4. Speak naturally to the SLT Avatar:
+   - Full-duplex real-time streaming powered by Google Gemini Live API.
+   - Realistic 60 FPS lip-synchronized face canvas tracking the spoken audio envelope in real time.
+   - Natural eye blinking, breathing micro-movements, and dynamic aura visual energy rings.
+   - Live transcription for both **You** and the **Agent**.
+5. Use **Mute** to mute your microphone, **Interrupt** to cut off speech and ask a new question, or **Stop** to end the session.
 
 ## Checks
 
 ```sh
-npm test
 npm run lint
 npm run build
 ```
-
-The hook tests mock the media SDK and backend to verify lifecycle races, media readiness, microphone control, and error handling without creating paid conversations. A live Tavus account is required to verify the actual generated face, voice quality, and lip-sync.

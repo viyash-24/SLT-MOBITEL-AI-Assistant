@@ -1,51 +1,39 @@
-# SLT-MOBITEL AI Assistant API
+# SLT-MOBITEL AI Assistant — Backend
 
-FastAPI service for retrieval-augmented answers about predefined SLT-MOBITEL information.
+FastAPI application delivering text chat and real-time live voice assistant capabilities for SLT-MOBITEL customers.
 
-## Structure
+## Architecture
 
-```text
-backend/
-├── main.py          # FastAPI application
-├── chat.py          # Gemini answer generation
-├── rag.py           # Retrieval-augmented generation process
-├── embeddings.py    # Gemini embeddings
-├── prompt.py        # Gemini prompt templates
-├── database.py      # PostgreSQL readiness checks
-├── config.py        # Environment variables
-├── requirements.txt # Python packages
-├── .env             # Local API keys and database URL
-└── knowledge_base/
-  └── data/
-    ├── SLT_FAQ_V4.json
-    └── SLT_Package_Details_New_Connection_Charges_V1_2.json
-```
+- **Clean Architecture:** Domain entities, application services, infrastructure adapters (Gemini, pgvector), and API route controllers.
+- **RAG Pipeline:** Document chunking, Gemini embeddings, and PostgreSQL/pgvector semantic similarity search with keyword search fallback.
+- **Live Voice Agent:** Full-duplex real-time audio communication powered by Google Gemini Live API (`gemini-2.5-flash-native-audio-latest`), featuring real-time speech synthesis, VAD turn detection, and 60 FPS lip-synchronized avatar animation.
 
-## Run locally
-
-1. Create a virtual environment and install dependencies:
+## Setup
 
 ```powershell
+# Create and activate virtual environment
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
+.venv\Scripts\Activate.ps1
+
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-2. Install and start a local PostgreSQL server with the `pgvector` extension.
-3. Create a `.env` file, then set `GOOGLE_API_KEY` and update `DATABASE_URL` with your local PostgreSQL credentials.
-4. Create the `vector` extension in the configured database if it is not already enabled:
+### Environment Configuration
 
-```sql
-CREATE EXTENSION IF NOT EXISTS vector;
+Configure `backend/.env`:
+
+```dotenv
+GOOGLE_API_KEY=your_google_api_key
+DATABASE_URL=postgresql://user:password@localhost:5432/slt_assistant
+CORS_ORIGINS=http://localhost:3000
+GEMINI_MODEL=gemini-2.5-flash-lite
+GEMINI_LIVE_MODEL=gemini-2.5-flash-native-audio-latest
+GEMINI_EMBEDDING_MODEL=models/gemini-embedding-001
+PGVECTOR_COLLECTION=slt_mobitel_knowledge
 ```
 
-5. Index the bundled knowledge base:
-
-```powershell
-python -m knowledge_base.ingest
-```
-
-6. Start the API from the `backend` directory:
+## Running the Server
 
 ```powershell
 uvicorn main:app --reload
@@ -55,76 +43,15 @@ The API is available at `http://localhost:8000`. Open `/docs` for the interactiv
 
 ## Endpoints
 
-- `GET /api/health` - service, configuration, and PostgreSQL readiness status
-- `POST /api/chat` - answer a question using retrieved knowledge (supports both `"text"` and `"voice"` channels)
-- `POST /api/knowledge/reindex` - replace the pgvector collection with bundled knowledge
-- `GET /api/tavus/status` - local Tavus configuration status (does not check credits or provider reachability)
-- `POST /api/tavus/conversation` - create the sole voice assistant session
-- `POST /api/tavus/conversation/end` - terminate that session
+- `GET /api/health` — service, configuration, and PostgreSQL readiness status
+- `POST /api/chat` — answer a question using retrieved knowledge (supports text channels)
+- `POST /api/knowledge/reindex` — replace the pgvector collection with bundled knowledge
+- `WS /api/voice/live` — bidirectional WebSocket endpoint streaming 16 kHz PCM microphone input to Google Gemini Live API and receiving 24 kHz PCM audio and real-time transcription
 
-The retired Gemini voice WebSocket `/api/voice/live` closes with a refresh message;
-`/api/livekit/token` returns HTTP 410. Neither can start another speaking assistant.
+## Tests
 
-Example request:
+Run route and integration tests:
 
-```json
-{
-  "message": "What is the rental for Fiber Starter?",
-  "history": [],
-  "channel": "text"
-}
+```powershell
+python -m pytest test_voice_routes.py -v
 ```
-
-## Tavus avatar configuration
-
-The voice page uses one Tavus full-pipeline PAL for hearing, reasoning, speech,
-and synchronized facial animation. The frontend joins the returned
-`conversation_url` through Daily's call object and renders its audio/video tracks
-inside the app. It does not open a hosted call room or start Gemini audio.
-
-Set these **server-side** values in `backend/.env`:
-
-```dotenv
-TAVUS_API_KEY=your_tavus_api_key
-TAVUS_PAL_ID=pc6868a0543c
-# Optional; omit to keep the PAL's configured default face:
-TAVUS_REPLICA_ID=r3f427f43c9d
-```
-
-The IDs above select this application's SLT AI Assistant PAL and face. Keep the
-API key private. Configure the PAL in Tavus with `pipeline_mode: full`, a realistic
-face, and the SLT Avatar customer support identity. The API sends current
-`pal_id` and optional `face_id` fields; the existing `TAVUS_REPLICA_ID` environment
-variable remains supported. An explicit PAL is required, so missing configuration
-cannot silently select an unrelated stock assistant.
-
-Attach verified SLT-MOBITEL knowledge to that PAL in Tavus, including the facts in
-`knowledge_base/data/SLT_FAQ_V4.json` and
-`knowledge_base/data/SLT_Package_Details_New_Connection_Charges_V1_2.json` (convert
-to a Tavus-supported document format if required). The backend's `/api/chat`
-retrieval and PostgreSQL index are **not automatically available to Tavus**.
-Keep Tavus documents current when package information changes. The session
-context tells the PAL to use verified attached knowledge and refer unanswered
-questions to 1212 rather than inventing prices or account details.
-
-The create endpoint accepts `language: "EN" | "SI" | "TA"` (default `EN`) and
-passes it to Tavus as `properties.languages`. English and Tamil are supported by
-the default Tavus TTS routing. **Sinhala requires a PAL TTS configuration that
-supports Sinhala**, such as Tavus's Azure Speech integration with an East US
-resource and an appropriate voice. A language unsupported by the configured PAL
-is rejected by Tavus and shown as a session error; the app never switches to a
-second voice service. Check the current [Tavus language support guide](https://docs.tavus.io/sections/conversational-video-interface/language-support).
-
-Session creation enables closed captions and video, uses a 30-minute maximum,
-and stops unattended calls after a short timeout. `meeting_token` is returned
-when supplied by Tavus for authenticated rooms. Ending a missing/already-ended
-session is idempotent; other provider failures are reported for cleanup retries.
-
-No live avatar can be verified without valid Tavus credentials, an enabled PAL
-and face, available conversation credits, and browser microphone permission.
-To verify the integration, ask one question in the voice page and confirm the
-single embedded avatar answers with synchronized audio/video, then mute and end
-the session. There should be no `/api/voice/live` connection or hosted room UI.
-
-Run provider-mocked route and retired-voice coverage with
-`python -m unittest test_tavus test_voice_routes -v` from `backend/`.
